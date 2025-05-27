@@ -9,9 +9,21 @@ pub struct GeneralCircuit {
     layers: Vec<Layer>,
 }
 
+impl GeneralCircuit {
+    fn new(layers: Vec<Layer>) -> Self {
+        Self { layers }
+    }
+}
+
 /// Represents a Layer in the circuit as a collection of gates
 pub struct Layer {
     gates: Vec<Gate>,
+}
+
+impl Layer {
+    fn new(gates: Vec<Gate>) -> Self {
+        Self { gates }
+    }
 }
 
 /// Gate Operation enum
@@ -26,4 +38,18 @@ pub enum GateOp {
 pub struct Gate {
     op: GateOp,
     inputs: [GateAddr; 2],
+}
+
+impl Gate {
+    fn new(op: GateOp, inputs: [GateAddr; 2]) -> Self {
+        Self { op, inputs }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn circuit_construction() {
+        todo!()
+    }
 }

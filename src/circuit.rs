@@ -59,7 +59,8 @@ impl Layer {
         self.gates.iter().map(|gate| gate.verify(id)).all(|x| x)
     }
 
-    // TODO: add documentation
+    /// Extracts the gate inputs from the evaluation scratchpad
+    /// then applies the gate fn on those inputs
     fn eval<F>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
     where
         for<'a> &'a F: std::ops::Add<&'a F, Output = F>,
@@ -112,7 +113,7 @@ impl Gate {
         valid
     }
 
-    // TODO: add documentation
+    /// Applies the gate function to the given inputs
     fn eval<F>(&self, left_input: &F, right_input: &F) -> F
     where
         for<'a> &'a F: std::ops::Add<&'a F, Output = F>,

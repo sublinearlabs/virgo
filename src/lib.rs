@@ -83,8 +83,17 @@ impl Gate {
 
 #[cfg(test)]
 mod test {
+    use crate::{Gate, GateOp};
+
     #[test]
-    fn circuit_construction() {
-        todo!()
+    fn test_gate_verification() {
+        // one input comes from layer 2 and the other from layer 3
+        let gate = Gate::new(GateOp::Add, [(2, 0), (3, 0)]);
+        // if the gate has to be at layer 1 to be valid
+        assert!(gate.verify(1));
+        // any other gate value should fail
+        assert!(!gate.verify(0));
+        assert!(!gate.verify(2));
+        assert!(!gate.verify(3));
     }
 }

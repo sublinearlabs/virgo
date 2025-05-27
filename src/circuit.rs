@@ -198,4 +198,36 @@ mod test {
             mul_gate.eval(&F::from_canonical_u32(12), &F::from_canonical_u32(20))
         );
     }
+
+    #[test]
+    fn test_circuit_evaluation() {
+        let circuit = len_three_vector_dot_product_circuit();
+        let evaluations = circuit.eval(
+            &[1, 2, 3, 4, 5, 6]
+                .into_iter()
+                .map(F::from_canonical_u32)
+                .collect::<Vec<_>>(),
+        );
+        assert_eq!(
+            evaluations,
+            vec![
+                vec![32]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![14]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![4, 10, 18]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![1, 2, 3, 4, 5, 6]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+            ]
+        );
+    }
 }

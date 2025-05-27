@@ -24,6 +24,22 @@ impl GeneralCircuit {
             .map(|(id, layer)| layer.verify(id))
             .all(|x| x)
     }
+
+    /// Evaluates the GeneralCircuit given the inputs
+    fn eval<F: Clone>(&self, inputs: &[F]) -> Vec<Vec<F>>
+    where
+        for<'a> &'a F: std::ops::Add<&'a F, Output = F>,
+        for<'a> &'a F: std::ops::Mul<&'a F, Output = F>,
+    {
+        let mut evaluation_scratchpad = vec![vec![]; self.layers.len()];
+        evaluation_scratchpad.push(inputs.to_vec());
+
+        for (layer_id, layer) in self.layers.iter().enumerate().rev() {
+            evaluation_scratchpad[layer_id] = layer.eval(&evaluation_scratchpad);
+        }
+
+        evaluation_scratchpad
+    }
 }
 
 /// Represents a Layer in the circuit as a collection of gates
@@ -41,6 +57,22 @@ impl Layer {
     fn verify(&self, id: LayerId) -> bool {
         // constraint: all gates must be valid
         self.gates.iter().map(|gate| gate.verify(id)).all(|x| x)
+    }
+
+    // TODO: add documentation
+    fn eval<F>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
+    where
+        for<'a> &'a F: std::ops::Add<&'a F, Output = F>,
+        for<'a> &'a F: std::ops::Mul<&'a F, Output = F>,
+    {
+        self.gates
+            .iter()
+            .map(|gate| {
+                let left_input = &evaluation_scratchpad[gate.inputs[0].0][gate.inputs[0].1];
+                let right_input = &evaluation_scratchpad[gate.inputs[1].0][gate.inputs[1].1];
+                gate.eval(left_input, right_input)
+            })
+            .collect()
     }
 }
 
@@ -78,6 +110,18 @@ impl Gate {
         valid &= left_id == layer_id + 1 || right_id == layer_id + 1;
 
         valid
+    }
+
+    // TODO: add documentation
+    fn eval<F>(&self, left_input: &F, right_input: &F) -> F
+    where
+        for<'a> &'a F: std::ops::Add<&'a F, Output = F>,
+        for<'a> &'a F: std::ops::Mul<&'a F, Output = F>,
+    {
+        match self.op {
+            GateOp::Add => left_input + right_input,
+            GateOp::Mul => left_input * right_input,
+        }
     }
 }
 

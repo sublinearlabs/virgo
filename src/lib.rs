@@ -83,7 +83,7 @@ impl Gate {
 
 #[cfg(test)]
 mod test {
-    use crate::{Gate, GateOp};
+    use crate::{Gate, GateOp, GeneralCircuit, Layer};
 
     #[test]
     fn test_gate_verification() {
@@ -95,5 +95,29 @@ mod test {
         assert!(!gate.verify(0));
         assert!(!gate.verify(2));
         assert!(!gate.verify(3));
+    }
+
+    #[test]
+    fn test_valid_circuit_construction() {
+        let circuit = GeneralCircuit::new(vec![
+            // output layer
+            Layer::new(vec![Gate::new(GateOp::Add, [(1, 0), (2, 0)])]),
+            Layer::new(vec![Gate::new(GateOp::Mul, [(3, 0), (2, 0)])]),
+            Layer::new(vec![Gate::new(GateOp::Add, [(3, 1), (3, 2)])]),
+        ]);
+        assert!(circuit.verify())
+    }
+
+    #[test]
+    fn test_invalid_circuit_construction() {
+        let circuit = GeneralCircuit::new(vec![
+            // output layer
+            Layer::new(vec![Gate::new(GateOp::Add, [(1, 0), (2, 0)])]),
+            // problem point, all gates on layer 1 must get at least one
+            // input from layer 2
+            Layer::new(vec![Gate::new(GateOp::Mul, [(3, 1), (3, 0)])]),
+            Layer::new(vec![Gate::new(GateOp::Add, [(3, 1), (3, 2)])]),
+        ]);
+        assert!(!circuit.verify())
     }
 }

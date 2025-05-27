@@ -1,21 +1,21 @@
 /// Type alias for layer id
-type LayerId = usize;
+pub type LayerId = usize;
 
 /// Position of a gate, given it's layer id and index
-type GateAddr = (LayerId, usize);
+pub type GateAddr = (LayerId, usize);
 
 /// Represents a circuit with gates that can have arbitrary wirings
-struct GeneralCircuit {
+pub struct GeneralCircuit {
     layers: Vec<Layer>,
 }
 
 /// Represents a Layer in the circuit as a collection of gates
-struct Layer {
+pub struct Layer {
     gates: Vec<Gate>,
 }
 
 /// Gate Operation enum
-enum GateOp {
+pub enum GateOp {
     /// Addition Gate
     Add,
     /// Multiplication Gate
@@ -23,7 +23,7 @@ enum GateOp {
 }
 
 /// Represents a node in the circuit tree
-struct Gate {
+pub struct Gate {
     op: GateOp,
     inputs: [GateAddr; 2],
 }

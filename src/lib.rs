@@ -1,14 +1,29 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+/// Type alias for layer id
+type LayerId = usize;
+
+/// Position of a gate, given it's layer id and index
+type GateAddr = (LayerId, usize);
+
+/// Represents a circuit with gates that can have arbitrary wirings
+struct GeneralCircuit {
+    layers: Vec<Layer>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Represents a Layer in the circuit as a collection of gates
+struct Layer {
+    gates: Vec<Gate>,
+}
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+/// Gate Operation enum
+enum GateOp {
+    /// Addition Gate
+    Add,
+    /// Multiplication Gate
+    Mul,
+}
+
+/// Represents a node in the circuit tree
+struct Gate {
+    op: GateOp,
+    inputs: [GateAddr; 2],
 }

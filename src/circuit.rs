@@ -26,10 +26,10 @@ impl GeneralCircuit {
     }
 
     /// Evaluates the GeneralCircuit given the inputs
-    fn eval<F: Clone>(&self, inputs: &[F]) -> Vec<Vec<F>>
+    fn eval<F: Copy>(&self, inputs: &[F]) -> Vec<Vec<F>>
     where
-        for<'a> &'a F: std::ops::Add<&'a F, Output = F>,
-        for<'a> &'a F: std::ops::Mul<&'a F, Output = F>,
+        F: std::ops::Add<F, Output = F>,
+        F: std::ops::Mul<F, Output = F>,
     {
         let mut evaluation_scratchpad = vec![vec![]; self.layers.len()];
         evaluation_scratchpad.push(inputs.to_vec());
@@ -61,10 +61,10 @@ impl Layer {
 
     /// Extracts the gate inputs from the evaluation scratchpad
     /// then applies the gate fn on those inputs
-    fn eval<F>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
+    fn eval<F: Copy>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
     where
-        for<'a> &'a F: std::ops::Add<&'a F, Output = F>,
-        for<'a> &'a F: std::ops::Mul<&'a F, Output = F>,
+        F: std::ops::Add<F, Output = F>,
+        F: std::ops::Mul<F, Output = F>,
     {
         self.gates
             .iter()
@@ -114,14 +114,14 @@ impl Gate {
     }
 
     /// Applies the gate function to the given inputs
-    fn eval<F>(&self, left_input: &F, right_input: &F) -> F
+    fn eval<F: Copy>(&self, left_input: &F, right_input: &F) -> F
     where
-        for<'a> &'a F: std::ops::Add<&'a F, Output = F>,
-        for<'a> &'a F: std::ops::Mul<&'a F, Output = F>,
+        F: std::ops::Add<F, Output = F>,
+        F: std::ops::Mul<F, Output = F>,
     {
         match self.op {
-            GateOp::Add => left_input + right_input,
-            GateOp::Mul => left_input * right_input,
+            GateOp::Add => *left_input + *right_input,
+            GateOp::Mul => *left_input * *right_input,
         }
     }
 }
@@ -129,6 +129,24 @@ impl Gate {
 #[cfg(test)]
 mod test {
     use crate::circuit::{Gate, GateOp, GeneralCircuit, Layer};
+    use p3_field::AbstractField;
+    use p3_goldilocks::Goldilocks as F;
+
+    // constructs a circuit that peforms a len 3 vector dot product
+    // [a, b, c] dot [d, e, f]
+    // input layer is given as follows: [a, b, c, d, e, f]
+    fn len_three_vector_dot_product_circuit() -> GeneralCircuit {
+        GeneralCircuit::new(vec![
+            Layer::new(vec![Gate::new(GateOp::Add, [(1, 0), (2, 2)])]),
+            Layer::new(vec![Gate::new(GateOp::Add, [(2, 0), (2, 1)])]),
+            // element wise multiplication layer
+            Layer::new(vec![
+                Gate::new(GateOp::Mul, [(3, 0), (3, 3)]),
+                Gate::new(GateOp::Mul, [(3, 1), (3, 4)]),
+                Gate::new(GateOp::Mul, [(3, 2), (3, 5)]),
+            ]),
+        ])
+    }
 
     #[test]
     fn test_gate_verification() {
@@ -164,5 +182,20 @@ mod test {
             Layer::new(vec![Gate::new(GateOp::Add, [(3, 1), (3, 2)])]),
         ]);
         assert!(!circuit.verify())
+    }
+
+    #[test]
+    fn test_gate_eval() {
+        let add_gate = Gate::new(GateOp::Add, [(0, 0), (0, 0)]);
+        assert_eq!(
+            F::from_canonical_u32(32),
+            add_gate.eval(&F::from_canonical_u32(12), &F::from_canonical_u32(20))
+        );
+
+        let mul_gate = Gate::new(GateOp::Mul, [(0, 0), (0, 0)]);
+        assert_eq!(
+            F::from_canonical_u32(240),
+            mul_gate.eval(&F::from_canonical_u32(12), &F::from_canonical_u32(20))
+        );
     }
 }

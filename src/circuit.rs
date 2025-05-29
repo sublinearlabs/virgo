@@ -4,6 +4,7 @@ pub type LayerId = usize;
 /// Position of a gate, given it's layer id and index
 pub type GateAddr = (LayerId, usize);
 
+#[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings
 pub struct GeneralCircuit {
     /// output_layer_index = 0
@@ -11,12 +12,12 @@ pub struct GeneralCircuit {
 }
 
 impl GeneralCircuit {
-    fn new(layers: Vec<Layer>) -> Self {
+    pub fn new(layers: Vec<Layer>) -> Self {
         Self { layers }
     }
 
     /// Determines if circuit is a valid GeneralCircuit
-    fn verify(self) -> bool {
+    pub fn verify(self) -> bool {
         // constraint: all layers must be valid
         self.layers
             .iter()
@@ -26,10 +27,11 @@ impl GeneralCircuit {
     }
 
     /// Evaluates the GeneralCircuit given the inputs
-    fn eval<F: Copy>(&self, inputs: &[F]) -> Vec<Vec<F>>
+    pub fn eval<F: Copy>(&self, inputs: &[F]) -> Vec<Vec<F>>
     where
         F: std::ops::Add<F, Output = F>,
         F: std::ops::Mul<F, Output = F>,
+        F: std::fmt::Debug,
     {
         let mut evaluation_scratchpad = vec![vec![]; self.layers.len()];
         evaluation_scratchpad.push(inputs.to_vec());
@@ -42,29 +44,31 @@ impl GeneralCircuit {
     }
 }
 
+#[derive(Debug, Clone)]
 /// Represents a Layer in the circuit as a collection of gates
 pub struct Layer {
     pub gates: Vec<Gate>,
 }
 
 impl Layer {
-    fn new(gates: Vec<Gate>) -> Self {
+    pub fn new(gates: Vec<Gate>) -> Self {
         Self { gates }
     }
 
     /// Detemines if all gates in a given layer have
     /// the appropriate wiring
-    fn verify(&self, id: LayerId) -> bool {
+    pub fn verify(&self, id: LayerId) -> bool {
         // constraint: all gates must be valid
         self.gates.iter().map(|gate| gate.verify(id)).all(|x| x)
     }
 
     /// Extracts the gate inputs from the evaluation scratchpad
     /// then applies the gate fn on those inputs
-    fn eval<F: Copy>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
+    pub fn eval<F: Copy>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
     where
         F: std::ops::Add<F, Output = F>,
         F: std::ops::Mul<F, Output = F>,
+        F: std::fmt::Debug,
     {
         self.gates
             .iter()
@@ -77,6 +81,7 @@ impl Layer {
     }
 }
 
+#[derive(Debug, Clone)]
 /// Gate Operation enum
 pub enum GateOp {
     /// Addition Gate
@@ -85,6 +90,7 @@ pub enum GateOp {
     Mul,
 }
 
+#[derive(Debug, Clone)]
 /// Represents a node in the circuit tree
 pub struct Gate {
     pub op: GateOp,
@@ -92,13 +98,13 @@ pub struct Gate {
 }
 
 impl Gate {
-    fn new(op: GateOp, inputs: [GateAddr; 2]) -> Self {
+    pub fn new(op: GateOp, inputs: [GateAddr; 2]) -> Self {
         Self { op, inputs }
     }
 
     /// Ensures that at least one input gate input comes
     /// from the next layer
-    fn verify(&self, layer_id: LayerId) -> bool {
+    pub fn verify(&self, layer_id: LayerId) -> bool {
         let (left_id, right_id) = (self.inputs[0].0, self.inputs[1].0);
         let mut valid = true;
 
@@ -114,7 +120,7 @@ impl Gate {
     }
 
     /// Applies the gate function to the given inputs
-    fn eval<F: Copy>(&self, left_input: &F, right_input: &F) -> F
+    pub fn eval<F: Copy>(&self, left_input: &F, right_input: &F) -> F
     where
         F: std::ops::Add<F, Output = F>,
         F: std::ops::Mul<F, Output = F>,

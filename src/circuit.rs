@@ -1,3 +1,5 @@
+use crate::LayerProvingInfo;
+
 /// Type alias for layer id
 pub type LayerId = usize;
 
@@ -22,16 +24,15 @@ impl GeneralCircuit {
         self.layers
             .iter()
             .enumerate()
-            .map(|(id, layer)| layer.verify(id))
-            .all(|x| x)
+            .all(|(id, layer)| layer.verify(id))
     }
 
     /// Evaluates the GeneralCircuit given the inputs
-    pub fn eval<F: Copy>(&self, inputs: &[F]) -> Vec<Vec<F>>
+    pub fn eval<F>(&self, inputs: &[F]) -> Vec<Vec<F>>
     where
         F: std::ops::Add<F, Output = F>,
         F: std::ops::Mul<F, Output = F>,
-        F: std::fmt::Debug,
+        F: std::fmt::Debug + Copy,
     {
         let mut evaluation_scratchpad = vec![vec![]; self.layers.len()];
         evaluation_scratchpad.push(inputs.to_vec());
@@ -41,6 +42,10 @@ impl GeneralCircuit {
         }
 
         evaluation_scratchpad
+    }
+
+    fn generate_layer_proving_info(layer_id: LayerId) -> LayerProvingInfo {
+        todo!()
     }
 }
 
@@ -59,16 +64,16 @@ impl Layer {
     /// the appropriate wiring
     pub fn verify(&self, id: LayerId) -> bool {
         // constraint: all gates must be valid
-        self.gates.iter().map(|gate| gate.verify(id)).all(|x| x)
+        self.gates.iter().all(|gate| gate.verify(id))
     }
 
     /// Extracts the gate inputs from the evaluation scratchpad
     /// then applies the gate fn on those inputs
-    pub fn eval<F: Copy>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
+    pub fn eval<F>(&self, evaluation_scratchpad: &[Vec<F>]) -> Vec<F>
     where
         F: std::ops::Add<F, Output = F>,
         F: std::ops::Mul<F, Output = F>,
-        F: std::fmt::Debug,
+        F: std::fmt::Debug + Copy,
     {
         self.gates
             .iter()

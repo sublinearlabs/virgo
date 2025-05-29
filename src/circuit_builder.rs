@@ -47,9 +47,17 @@ impl Node {
         self.left_child.is_none() && self.right_child.is_none() && self.op.is_none()
     }
 
-    fn to_gate(&self) -> Gate {
+    fn to_gate(&self, max_layer_index: usize) -> Gate {
         // Create gate with left and right children
-        let inputs = [self.left_child.unwrap(), self.right_child.unwrap()];
+        let left = (
+            max_layer_index - self.left_child.unwrap().0,
+            self.left_child.unwrap().1,
+        );
+        let right = (
+            max_layer_index - self.right_child.unwrap().0,
+            self.right_child.unwrap().1,
+        );
+        let inputs = [left, right];
         Gate::new(self.op.clone().expect("Operation should exist"), inputs)
     }
 }
@@ -108,12 +116,22 @@ impl Builder {
 
     // Builds the layered circuit
     fn build_circuit(&mut self) -> GeneralCircuit {
+        let max_layer_index = self.layers.len() - 1;
+
         // Skips the input layer
         let layers = self
             .layers
             .iter()
             .skip(1)
-            .map(|layer| Layer::new(layer.iter().map(|node| node.to_gate()).collect()))
+            .map(|layer| {
+                Layer::new(
+                    layer
+                        .iter()
+                        .map(|node| node.to_gate(max_layer_index))
+                        .collect(),
+                )
+            })
+            .rev()
             .collect();
 
         GeneralCircuit::new(layers)

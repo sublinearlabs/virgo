@@ -1,10 +1,4 @@
-use crate::LayerProvingInfo;
-
-/// Type alias for layer id
-pub type LayerId = usize;
-
-/// Position of a gate, given it's layer id and index
-pub type GateAddr = (LayerId, usize);
+use crate::{GateAddr, LayerId, LayerProvingInfo};
 
 #[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings
@@ -45,6 +39,7 @@ impl GeneralCircuit {
     }
 
     fn generate_layer_proving_info(layer_id: LayerId) -> LayerProvingInfo {
+        // need the subset instruction, before I can do anything
         todo!()
     }
 }

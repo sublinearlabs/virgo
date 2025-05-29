@@ -1,4 +1,4 @@
-use crate::{GateAddr, LayerId, LayerProvingInfo};
+use crate::util::{GateAddr, LayerId, LayerProvingInfo};
 
 #[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings

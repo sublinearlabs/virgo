@@ -1,7 +1,7 @@
 use std::cmp::max;
 
 use crate::circuit::{Gate, GateOp, GeneralCircuit, Layer};
-use crate::GateAddr;
+use crate::util::GateAddr;
 
 #[derive(Debug, Clone)]
 struct Builder {

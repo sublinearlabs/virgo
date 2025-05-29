@@ -8,7 +8,7 @@ pub type GateAddr = (LayerId, usize);
 pub(crate) struct LayerProvingInfo {
     /// Instructions on how to build each v subset
     /// for some given layer id
-    v_subsets: Vec<Vec<GateAddr>>,
+    v_subsets: Vec<Vec<usize>>,
     /// Subset add i's based on subset v's
     add_subsets: Vec<[usize; 3]>,
     /// Subset mul i's based on subset v's

@@ -38,8 +38,18 @@ impl GeneralCircuit {
         evaluation_scratchpad
     }
 
-    fn generate_layer_proving_info(layer_id: LayerId) -> LayerProvingInfo {
-        // need the subset instruction, before I can do anything
+    // TODO: add documentation
+    fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
+        // input: constraint: layer_id cannot point to the last layer
+        assert_ne!(layer_id, self.layers.len() - 1);
+
+        let layer_count = self.layers.len();
+
+        let v_subsets = vec![vec![]; layer_count - 1];
+
+        // how do I populate the v subsets??
+        // I can iterate over the gates in the requested layer
+
         todo!()
     }
 }

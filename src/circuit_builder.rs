@@ -1,8 +1,4 @@
-use std::{
-    cmp::max,
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::cmp::max;
 
 use crate::circuit::{Gate, GateAddr, GateOp, GeneralCircuit, Layer};
 
@@ -71,7 +67,7 @@ impl Builder {
     // Creates an input node
     fn create_input_node(&mut self) -> GateAddr {
         // Inputs are on layer 0
-        if self.layers.len() <= 0 {
+        if self.layers.len() == 0 {
             self.layers.push(vec![]);
         }
 

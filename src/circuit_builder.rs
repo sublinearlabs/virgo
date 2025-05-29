@@ -80,29 +80,8 @@ impl Node {
     }
 }
 
-trait BuilderTrait {
+impl Builder {
     // Initializes the builder
-    fn init(input_len: usize) -> Self;
-
-    // Adds a gate to the circuit and returns the gate index
-    fn add_gate(
-        &mut self,
-        left_child: &Arc<Mutex<Node>>,
-        right_child: &Arc<Mutex<Node>>,
-        op: &GateOp,
-    ) -> Arc<Mutex<Node>>;
-
-    // Creates an input node
-    fn create_input_node(&mut self, input_index: usize) -> Arc<Mutex<Node>>;
-
-    // Topologically sorts the circuit to get the various layers
-    fn process_circuit(&mut self) -> HashMap<usize, Vec<Arc<Mutex<Node>>>>;
-
-    // Builds the layered circuit
-    fn build_circuit(&mut self) -> GeneralCircuit;
-}
-
-impl BuilderTrait for Builder {
     // Will the input length always be known before hand?
     fn init(input_len: usize) -> Self {
         Self {
@@ -112,6 +91,7 @@ impl BuilderTrait for Builder {
         }
     }
 
+    // Creates an input node
     fn create_input_node(&mut self, input_index: usize) -> Arc<Mutex<Node>> {
         let node = Arc::new(Mutex::new(Node::new(input_index, None, None, None)));
 
@@ -120,6 +100,7 @@ impl BuilderTrait for Builder {
         node
     }
 
+    // Adds a gate to the circuit and returns the gate
     fn add_gate(
         &mut self,
         left_child: &Arc<Mutex<Node>>,
@@ -140,6 +121,7 @@ impl BuilderTrait for Builder {
         node
     }
 
+    // Topologically sorts the circuit to get the various layers
     fn process_circuit(&mut self) -> HashMap<usize, Vec<Arc<Mutex<Node>>>> {
         // Maps layer index to vec of nodes on that layer
         let mut hash_map = HashMap::new();
@@ -215,6 +197,7 @@ impl BuilderTrait for Builder {
         hash_map
     }
 
+    // Builds the layered circuit
     fn build_circuit(&mut self) -> GeneralCircuit {
         let map = self.process_circuit();
 
@@ -277,7 +260,7 @@ fn process_node(node: &Arc<Mutex<Node>>) {
 mod tests {
     use crate::circuit::GateOp;
 
-    use super::{Builder, BuilderTrait};
+    use super::Builder;
 
     #[test]
     fn test_circuit_builder() {

@@ -8,7 +8,7 @@ pub type GateAddr = (LayerId, usize);
 /// Represents a circuit with gates that can have arbitrary wirings
 pub struct GeneralCircuit {
     /// output_layer_index = 0
-    layers: Vec<Layer>,
+    pub layers: Vec<Layer>,
 }
 
 impl GeneralCircuit {
@@ -47,7 +47,7 @@ impl GeneralCircuit {
 #[derive(Debug, Clone)]
 /// Represents a Layer in the circuit as a collection of gates
 pub struct Layer {
-    gates: Vec<Gate>,
+    pub gates: Vec<Gate>,
 }
 
 impl Layer {
@@ -93,8 +93,8 @@ pub enum GateOp {
 #[derive(Debug, Clone)]
 /// Represents a node in the circuit tree
 pub struct Gate {
-    op: GateOp,
-    inputs: [GateAddr; 2],
+    pub op: GateOp,
+    pub inputs: [GateAddr; 2],
 }
 
 impl Gate {

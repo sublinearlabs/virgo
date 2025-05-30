@@ -29,7 +29,7 @@ impl Builder {
     }
 
     // Adds a gate to the circuit and returns the gate
-    fn add_gate(&mut self, left_child: GateAddr, right_child: GateAddr, op: &GateOp) -> GateAddr {
+    fn add_node(&mut self, left_child: GateAddr, right_child: GateAddr, op: &GateOp) -> GateAddr {
         let gate_layer = max(left_child.0, right_child.0) + 1;
 
         if self.layers.len() <= gate_layer - 1 {
@@ -96,15 +96,15 @@ mod tests {
         let three = builder.create_input_node();
         let five = builder.create_input_node();
 
-        let x_square = builder.add_gate(x, x, &mul);
+        let x_square = builder.add_node(x, x, &mul);
 
-        let a_x_square = builder.add_gate(a, x_square, &mul);
+        let a_x_square = builder.add_node(a, x_square, &mul);
 
-        let three_x = builder.add_gate(three, x, &mul);
+        let three_x = builder.add_node(three, x, &mul);
 
-        let a_x_square_plus_three_x = builder.add_gate(a_x_square, three_x, &add);
+        let a_x_square_plus_three_x = builder.add_node(a_x_square, three_x, &add);
 
-        let res = builder.add_gate(a_x_square_plus_three_x, five, &add);
+        let res = builder.add_node(a_x_square_plus_three_x, five, &add);
 
         let circuit = builder.build_circuit();
 

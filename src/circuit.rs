@@ -39,11 +39,7 @@ impl GeneralCircuit {
     }
 
     /// Return circuit information needed to run virgo sumcheck
-    pub(crate) fn generate_layer_proving_info<F: Copy>(
-        &self,
-        layer_id: LayerId,
-        evaluations: Vec<Vec<F>>,
-    ) -> LayerProvingInfo<F> {
+    pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
         // input: constraint: layer_id cannot point to the input layer
         assert_ne!(layer_id, self.layers.len() - 1);
 
@@ -54,25 +50,25 @@ impl GeneralCircuit {
         let mut mul_subsets = vec![vec![]; layer_count - 1];
 
         for (gate_index, gate) in self.layers[layer_id].gates.iter().enumerate() {
-            let [(l_layer_id, l_index), (r_layer_id, r_index)] = gate.inputs;
+            let [(l_layer_id, _), (r_layer_id, _)] = gate.inputs;
             let [norm_l_layer_id, norm_r_layer_id] =
                 [layer_count - l_layer_id, layer_count - r_layer_id];
 
             // populate the v subset vectors
-            v_subsets[norm_l_layer_id].push(evaluations[l_layer_id][l_index]);
-            v_subsets[norm_r_layer_id].push(evaluations[r_layer_id][r_index]);
+            v_subsets[norm_l_layer_id].push(gate.inputs[0]);
+            v_subsets[norm_r_layer_id].push(gate.inputs[1]);
 
             if gate.op == GateOp::Add {
                 add_subsets[norm_l_layer_id + norm_r_layer_id].push([
                     gate_index,
-                    v_subsets[l_layer_id].len() - 1,
-                    v_subsets[r_layer_id].len() - 1,
+                    v_subsets[norm_l_layer_id].len() - 1,
+                    v_subsets[norm_r_layer_id].len() - 1,
                 ]);
             } else {
                 mul_subsets[norm_l_layer_id + norm_r_layer_id].push([
                     gate_index,
-                    v_subsets[l_layer_id].len() - 1,
-                    v_subsets[r_layer_id].len() - 1,
+                    v_subsets[norm_l_layer_id].len() - 1,
+                    v_subsets[norm_r_layer_id].len() - 1,
                 ]);
             }
         }

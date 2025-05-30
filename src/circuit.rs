@@ -171,6 +171,8 @@ impl Gate {
 
 #[cfg(test)]
 mod test {
+    use std::thread::Builder;
+
     use crate::circuit::{Gate, GateOp, GeneralCircuit, Layer};
     use p3_field::AbstractField;
     use p3_goldilocks::Goldilocks as F;
@@ -189,6 +191,10 @@ mod test {
                 Gate::new(GateOp::Mul, [(3, 2), (3, 5)]),
             ]),
         ])
+    }
+
+    fn circuit_1() -> GeneralCircuit {
+        //let mut builder = Builder::new()
     }
 
     #[test]

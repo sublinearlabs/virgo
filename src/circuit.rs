@@ -38,7 +38,7 @@ impl GeneralCircuit {
         evaluation_scratchpad
     }
 
-    // TODO: add documentation
+    /// Return circuit information needed to run virgo sumcheck
     fn generate_layer_proving_info<F: Copy>(
         &self,
         layer_id: LayerId,

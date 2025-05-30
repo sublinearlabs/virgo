@@ -1,4 +1,4 @@
 pub mod circuit;
-mod circuit_builder;
+pub mod circuit_builder;
 mod circuit_props;
 mod util;

@@ -171,9 +171,10 @@ impl Gate {
 
 #[cfg(test)]
 mod test {
-    use std::thread::Builder;
-
-    use crate::circuit::{Gate, GateOp, GeneralCircuit, Layer};
+    use crate::{
+        circuit::{Gate, GateOp, GeneralCircuit, Layer},
+        circuit_builder::Builder,
+    };
     use p3_field::AbstractField;
     use p3_goldilocks::Goldilocks as F;
 
@@ -194,7 +195,29 @@ mod test {
     }
 
     fn circuit_1() -> GeneralCircuit {
-        //let mut builder = Builder::new()
+        let mut builder = Builder::init();
+
+        // input layer
+        let a = builder.create_input_node();
+        let b = builder.create_input_node();
+        let c = builder.create_input_node();
+        let d = builder.create_input_node();
+        let e = builder.create_input_node();
+        let f = builder.create_input_node();
+
+        let g = builder.add_node(a, b, &GateOp::Add);
+        let h = builder.add_node(a, b, &GateOp::Mul);
+        let j = builder.add_node(c, d, &GateOp::Add);
+        let k = builder.add_node(e, f, &GateOp::Add);
+
+        let l = builder.add_node(g, h, &GateOp::Mul);
+        let m = builder.add_node(j, d, &GateOp::Add);
+
+        // output layer
+        builder.add_node(l, c, &GateOp::Add);
+        builder.add_node(m, k, &GateOp::Mul);
+
+        builder.build_circuit()
     }
 
     #[test]
@@ -269,6 +292,35 @@ mod test {
                     .map(F::from_canonical_u32)
                     .collect::<Vec<_>>(),
                 vec![4, 10, 18]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![1, 2, 3, 4, 5, 6]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+            ]
+        );
+
+        let circuit = circuit_1();
+        let evaluations = circuit.eval(
+            &[1, 2, 3, 4, 5, 6]
+                .into_iter()
+                .map(F::from_canonical_u32)
+                .collect::<Vec<_>>(),
+        );
+        assert_eq!(
+            evaluations,
+            vec![
+                vec![9, 121]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![6, 11]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![3, 2, 7, 11]
                     .into_iter()
                     .map(F::from_canonical_u32)
                     .collect::<Vec<_>>(),

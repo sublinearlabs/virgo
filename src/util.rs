@@ -10,7 +10,7 @@ pub(crate) struct LayerProvingInfo<F> {
     /// Subset values v for some given layer id
     pub(crate) v_subsets: Vec<Vec<F>>,
     /// Subset add i's based on subset v's
-    pub(crate) add_subsets: Vec<[usize; 3]>,
+    pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,
     /// Subset mul i's based on subset v's
-    pub(crate) mul_subsets: Vec<[usize; 3]>,
+    pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
 }

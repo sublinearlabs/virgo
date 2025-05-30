@@ -39,18 +39,46 @@ impl GeneralCircuit {
     }
 
     // TODO: add documentation
-    fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
+    fn generate_layer_proving_info<F: Copy>(
+        &self,
+        layer_id: LayerId,
+        evaluations: Vec<Vec<F>>,
+    ) -> LayerProvingInfo<F> {
         // input: constraint: layer_id cannot point to the last layer
         assert_ne!(layer_id, self.layers.len() - 1);
 
         let layer_count = self.layers.len();
 
-        let v_subsets = vec![vec![]; layer_count - 1];
+        let mut v_subsets = vec![vec![]; layer_count - 1];
+        let mut add_subsets = vec![];
+        let mut mul_subsets = vec![];
 
-        // how do I populate the v subsets??
-        // I can iterate over the gates in the requested layer
+        for (gate_index, gate) in self.layers[layer_id].gates.iter().enumerate() {
+            // populate the v subset vectors
+            let [(l_layer_id, l_index), (r_layer_id, r_index)] = gate.inputs;
+            v_subsets[l_layer_id].push(evaluations[l_layer_id][l_index]);
+            v_subsets[r_layer_id].push(evaluations[r_layer_id][r_index]);
 
-        todo!()
+            if gate.op == GateOp::Add {
+                add_subsets.push([
+                    gate_index,
+                    v_subsets[l_layer_id].len() - 1,
+                    v_subsets[r_layer_id].len() - 1,
+                ]);
+            } else {
+                mul_subsets.push([
+                    gate_index,
+                    v_subsets[l_layer_id].len() - 1,
+                    v_subsets[r_layer_id].len() - 1,
+                ]);
+            }
+        }
+
+        LayerProvingInfo {
+            v_subsets,
+            add_subsets,
+            mul_subsets,
+        }
     }
 }
 
@@ -91,7 +119,7 @@ impl Layer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// Gate Operation enum
 pub enum GateOp {
     /// Addition Gate

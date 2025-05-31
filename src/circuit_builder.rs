@@ -1,9 +1,10 @@
 use std::cmp::max;
 
-use crate::circuit::{Gate, GateAddr, GateOp, GeneralCircuit, Layer};
+use crate::circuit::{Gate, GateOp, GeneralCircuit, Layer};
+use crate::util::GateAddr;
 
 #[derive(Debug, Clone)]
-struct Builder {
+pub struct Builder {
     // number_of_input
     input_len: usize,
     // contains a vec of all Layers
@@ -12,7 +13,7 @@ struct Builder {
 
 impl Builder {
     // Initializes the builder
-    fn init() -> Self {
+    pub fn init() -> Self {
         Self {
             input_len: 0,
             layers: vec![],
@@ -20,7 +21,7 @@ impl Builder {
     }
 
     // Creates an input node
-    fn create_input_node(&mut self) -> GateAddr {
+    pub fn create_input_node(&mut self) -> GateAddr {
         let gate_index = self.input_len;
 
         self.input_len += 1;
@@ -29,7 +30,12 @@ impl Builder {
     }
 
     // Adds a gate to the circuit and returns the gate
-    fn add_node(&mut self, left_child: GateAddr, right_child: GateAddr, op: &GateOp) -> GateAddr {
+    pub fn add_node(
+        &mut self,
+        left_child: GateAddr,
+        right_child: GateAddr,
+        op: &GateOp,
+    ) -> GateAddr {
         let gate_layer = max(left_child.0, right_child.0) + 1;
 
         if self.layers.len() <= gate_layer - 1 {
@@ -48,7 +54,7 @@ impl Builder {
     }
 
     // Builds the layered circuit
-    fn build_circuit(&mut self) -> GeneralCircuit {
+    pub fn build_circuit(&mut self) -> GeneralCircuit {
         let max_layer_index = self.layers.len();
 
         let layers = self

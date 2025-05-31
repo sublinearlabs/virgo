@@ -1,8 +1,4 @@
-/// Type alias for layer id
-pub type LayerId = usize;
-
-/// Position of a gate, given it's layer id and index
-pub type GateAddr = (LayerId, usize);
+use crate::util::{GateAddr, LayerId, LayerProvingInfo};
 
 #[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings
@@ -17,21 +13,20 @@ impl GeneralCircuit {
     }
 
     /// Determines if circuit is a valid GeneralCircuit
-    pub fn verify(self) -> bool {
+    pub fn verify(&self) -> bool {
         // constraint: all layers must be valid
         self.layers
             .iter()
             .enumerate()
-            .map(|(id, layer)| layer.verify(id))
-            .all(|x| x)
+            .all(|(id, layer)| layer.verify(id))
     }
 
     /// Evaluates the GeneralCircuit given the inputs
-    pub fn eval<F: Copy>(&self, inputs: &[F]) -> Vec<Vec<F>>
+    pub fn eval<F>(&self, inputs: &[F]) -> Vec<Vec<F>>
     where
         F: std::ops::Add<F, Output = F>,
         F: std::ops::Mul<F, Output = F>,
-        F: std::fmt::Debug,
+        F: std::fmt::Debug + Copy,
     {
         let mut evaluation_scratchpad = vec![vec![]; self.layers.len()];
         evaluation_scratchpad.push(inputs.to_vec());
@@ -41,6 +36,66 @@ impl GeneralCircuit {
         }
 
         evaluation_scratchpad
+    }
+
+    /// Return circuit information needed to run virgo sumcheck
+    pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
+        // input: constraint: layer_id cannot point to the input layer
+        assert_ne!(layer_id, self.layers.len() - 1);
+
+        // given some global layer id after the target id
+        // converts that to the relative id from the target id
+        // example: if target_id = i, then layer i + 1 will have
+        // relative id = 0
+        let norm_layer_id = |id: LayerId| id - layer_id - 1;
+
+        // determines the number of layers after the target layer
+        let rem_layers = self.layers.len() - layer_id;
+
+        // init subset vectors
+        let mut v_subset_instruction = vec![vec![]; rem_layers];
+        let mut add_subsets = vec![vec![]; rem_layers];
+        let mut mul_subsets = vec![vec![]; rem_layers];
+
+        for (gate_index, gate) in self.layers[layer_id].gates.iter().enumerate() {
+            // v subset population
+            // the goal here is to have a shadow layer for every layer
+            // after the target layer.
+            // each shadow layer only contains gates that contribute to
+            // the input of the target layer.
+            // we already initialized empty shadow layers.
+            // for each gate input we determine what shadow layer
+            // it belongs to and push
+
+            // compute the relative layer index for the inputs
+            let [norm_left, norm_right] = [
+                norm_layer_id(gate.inputs[0].0),
+                norm_layer_id(gate.inputs[1].0),
+            ];
+
+            v_subset_instruction[norm_left].push(gate.inputs[0].1);
+            v_subset_instruction[norm_right].push(gate.inputs[1].1);
+
+            // build the add_i / mul_i entry based on v_subset
+            let sparse_entry = [
+                gate_index,
+                v_subset_instruction[norm_left].len() - 1,
+                v_subset_instruction[norm_right].len() - 1,
+            ];
+
+            if gate.op == GateOp::Add {
+                add_subsets[norm_left + norm_right].push(sparse_entry);
+            } else {
+                mul_subsets[norm_left + norm_right].push(sparse_entry);
+            }
+        }
+
+        LayerProvingInfo {
+            layer_id,
+            v_subset_instruction,
+            add_subsets,
+            mul_subsets,
+        }
     }
 }
 
@@ -59,16 +114,16 @@ impl Layer {
     /// the appropriate wiring
     pub fn verify(&self, id: LayerId) -> bool {
         // constraint: all gates must be valid
-        self.gates.iter().map(|gate| gate.verify(id)).all(|x| x)
+        self.gates.iter().all(|gate| gate.verify(id))
     }
 
     /// Extracts the gate inputs from the evaluation scratchpad
     /// then applies the gate fn on those inputs
-    pub fn eval<F: Copy>(&self, evaluation_scratchpad: &Vec<Vec<F>>) -> Vec<F>
+    pub fn eval<F>(&self, evaluation_scratchpad: &[Vec<F>]) -> Vec<F>
     where
         F: std::ops::Add<F, Output = F>,
         F: std::ops::Mul<F, Output = F>,
-        F: std::fmt::Debug,
+        F: std::fmt::Debug + Copy,
     {
         self.gates
             .iter()
@@ -81,7 +136,7 @@ impl Layer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// Gate Operation enum
 pub enum GateOp {
     /// Addition Gate
@@ -134,7 +189,11 @@ impl Gate {
 
 #[cfg(test)]
 mod test {
-    use crate::circuit::{Gate, GateOp, GeneralCircuit, Layer};
+    use crate::{
+        circuit::{Gate, GateOp, GeneralCircuit, Layer},
+        circuit_builder::Builder,
+        util::LayerProvingInfo,
+    };
     use p3_field::AbstractField;
     use p3_goldilocks::Goldilocks as F;
 
@@ -152,6 +211,32 @@ mod test {
                 Gate::new(GateOp::Mul, [(3, 2), (3, 5)]),
             ]),
         ])
+    }
+
+    fn circuit_1() -> GeneralCircuit {
+        let mut builder = Builder::init();
+
+        // input layer
+        let a = builder.create_input_node();
+        let b = builder.create_input_node();
+        let c = builder.create_input_node();
+        let d = builder.create_input_node();
+        let e = builder.create_input_node();
+        let f = builder.create_input_node();
+
+        let g = builder.add_node(a, b, &GateOp::Add);
+        let h = builder.add_node(a, b, &GateOp::Mul);
+        let j = builder.add_node(c, d, &GateOp::Add);
+        let k = builder.add_node(e, f, &GateOp::Add);
+
+        let l = builder.add_node(g, h, &GateOp::Mul);
+        let m = builder.add_node(j, d, &GateOp::Add);
+
+        // output layer
+        builder.add_node(l, c, &GateOp::Add);
+        builder.add_node(m, k, &GateOp::Mul);
+
+        builder.build_circuit()
     }
 
     #[test]
@@ -233,6 +318,67 @@ mod test {
                     .into_iter()
                     .map(F::from_canonical_u32)
                     .collect::<Vec<_>>(),
+            ]
+        );
+
+        let circuit = circuit_1();
+        let evaluations = circuit.eval(
+            &[1, 2, 3, 4, 5, 6]
+                .into_iter()
+                .map(F::from_canonical_u32)
+                .collect::<Vec<_>>(),
+        );
+        assert_eq!(
+            evaluations,
+            vec![
+                vec![9, 121]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![6, 11]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![3, 2, 7, 11]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+                vec![1, 2, 3, 4, 5, 6]
+                    .into_iter()
+                    .map(F::from_canonical_u32)
+                    .collect::<Vec<_>>(),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_layer_info_generation() {
+        let circuit = circuit_1();
+        let output_layer_proving_info = circuit.generate_layer_proving_info(0);
+        assert_eq!(
+            output_layer_proving_info,
+            LayerProvingInfo {
+                layer_id: 0,
+                v_subset_instruction: vec![vec![0, 1], vec![3], vec![2]],
+                add_subsets: vec![vec![], vec![], vec![[0, 0, 0]]],
+                mul_subsets: vec![vec![], vec![[1, 1, 0]], vec![]]
+            }
+        );
+
+        let evaluations = circuit.eval(
+            &[1, 2, 3, 4, 5, 6]
+                .into_iter()
+                .map(F::from_canonical_u32)
+                .collect::<Vec<_>>(),
+        );
+
+        let layer_info_with_subset = output_layer_proving_info.extract_subsets(&evaluations);
+        assert_eq!(
+            layer_info_with_subset.v_subsets,
+            vec![
+                vec![F::from_canonical_u32(6), F::from_canonical_u32(11)],
+                vec![F::from_canonical_u32(11)],
+                vec![F::from_canonical_u32(3)]
             ]
         );
     }

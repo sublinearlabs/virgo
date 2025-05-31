@@ -9,11 +9,7 @@ pub struct GeneralCircuit {
 
 impl GeneralCircuit {
     pub fn new(layers: Vec<Layer>) -> Self {
-        let circuit = Self { layers };
-
-        // TODO: move this test to the circuit builder
-        assert!(circuit.verify());
-        circuit
+        Self { layers }
     }
 
     /// Determines if circuit is a valid GeneralCircuit

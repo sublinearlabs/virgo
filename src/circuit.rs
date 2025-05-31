@@ -364,5 +364,22 @@ mod test {
                 mul_subsets: vec![vec![], vec![[1, 1, 0]], vec![]]
             }
         );
+
+        let evaluations = circuit.eval(
+            &[1, 2, 3, 4, 5, 6]
+                .into_iter()
+                .map(F::from_canonical_u32)
+                .collect::<Vec<_>>(),
+        );
+
+        let layer_info_with_subset = output_layer_proving_info.extract_subsets(&evaluations);
+        assert_eq!(
+            layer_info_with_subset.v_subsets,
+            vec![
+                vec![F::from_canonical_u32(6), F::from_canonical_u32(11)],
+                vec![F::from_canonical_u32(11)],
+                vec![F::from_canonical_u32(3)]
+            ]
+        );
     }
 }

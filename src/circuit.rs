@@ -9,11 +9,13 @@ pub struct GeneralCircuit {
 
 impl GeneralCircuit {
     pub fn new(layers: Vec<Layer>) -> Self {
-        Self { layers }
+        let circuit = Self { layers };
+        assert!(circuit.verify());
+        circuit
     }
 
     /// Determines if circuit is a valid GeneralCircuit
-    pub fn verify(self) -> bool {
+    pub fn verify(&self) -> bool {
         // constraint: all layers must be valid
         self.layers
             .iter()
@@ -45,9 +47,9 @@ impl GeneralCircuit {
 
         let layer_count = self.layers.len();
 
-        let mut v_subsets = vec![vec![]; layer_count - 1];
-        let mut add_subsets = vec![vec![]; layer_count - 1];
-        let mut mul_subsets = vec![vec![]; layer_count - 1];
+        let mut v_subsets = vec![vec![]; layer_count - layer_id];
+        let mut add_subsets = vec![vec![]; layer_count - layer_id];
+        let mut mul_subsets = vec![vec![]; layer_count - layer_id];
 
         for (gate_index, gate) in self.layers[layer_id].gates.iter().enumerate() {
             let [(l_layer_id, _), (r_layer_id, _)] = gate.inputs;
@@ -55,22 +57,31 @@ impl GeneralCircuit {
                 [layer_count - l_layer_id, layer_count - r_layer_id];
 
             // populate the v subset vectors
-            v_subsets[norm_l_layer_id].push(gate.inputs[0]);
-            v_subsets[norm_r_layer_id].push(gate.inputs[1]);
+            v_subsets[norm_l_layer_id].push(gate.inputs[0].1);
+            v_subsets[norm_r_layer_id].push(gate.inputs[1].1);
 
             if gate.op == GateOp::Add {
+                dbg!(norm_l_layer_id);
+                dbg!(norm_r_layer_id);
+
                 add_subsets[norm_l_layer_id + norm_r_layer_id].push([
                     gate_index,
                     v_subsets[norm_l_layer_id].len() - 1,
                     v_subsets[norm_r_layer_id].len() - 1,
                 ]);
             } else {
+                dbg!(norm_l_layer_id);
+                dbg!(norm_r_layer_id);
+
                 mul_subsets[norm_l_layer_id + norm_r_layer_id].push([
                     gate_index,
                     v_subsets[norm_l_layer_id].len() - 1,
                     v_subsets[norm_r_layer_id].len() - 1,
                 ]);
             }
+
+            //dbg!(&add_subsets);
+            //dbg!(&mul_subsets);
         }
 
         LayerProvingInfo {
@@ -174,6 +185,7 @@ mod test {
     use crate::{
         circuit::{Gate, GateOp, GeneralCircuit, Layer},
         circuit_builder::Builder,
+        util::LayerProvingInfo,
     };
     use p3_field::AbstractField;
     use p3_goldilocks::Goldilocks as F;
@@ -329,6 +341,20 @@ mod test {
                     .map(F::from_canonical_u32)
                     .collect::<Vec<_>>(),
             ]
+        );
+    }
+
+    #[test]
+    fn test_layer_info_generation() {
+        let circuit = circuit_1();
+        let output_layer_proving_info = circuit.generate_layer_proving_info(0);
+        assert_eq!(
+            output_layer_proving_info,
+            LayerProvingInfo {
+                v_subsets: vec![vec![0, 1], vec![3], vec![2]],
+                add_subsets: vec![vec![], vec![], vec![[0, 0, 1]]],
+                mul_subsets: vec![vec![], vec![[1, 1, 3]], vec![]]
+            }
         );
     }
 }

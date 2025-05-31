@@ -8,7 +8,8 @@ pub type GateAddr = (LayerId, usize);
 /// Represents components needed to perform sumcheck for the `GeneralCircuit`
 /// with concrete subset values
 pub(crate) struct LayerProvingInfo {
-    // TODO: change comment, not accurate anymore
+    /// Layer Id we generated the proving info for
+    pub(crate) layer_id: usize,
     /// Subset values v for some given layer id
     pub(crate) v_subsets: Vec<Vec<usize>>,
     /// Subset add i's based on subset v's

@@ -47,46 +47,52 @@ impl GeneralCircuit {
         // input: constraint: layer_id cannot point to the input layer
         assert_ne!(layer_id, self.layers.len() - 1);
 
-        let layer_count = self.layers.len();
+        // TODO: add documentation for this section
+        let norm_layer_id = |id: LayerId| id - layer_id - 1;
 
-        let mut v_subsets = vec![vec![]; layer_count - layer_id];
-        let mut add_subsets = vec![vec![]; layer_count - layer_id];
-        let mut mul_subsets = vec![vec![]; layer_count - layer_id];
+        // determines the number of layers after the target layer
+        let rem_layers = self.layers.len() - layer_id;
+
+        // init subset vectors
+        let mut v_subsets = vec![vec![]; rem_layers];
+        let mut add_subsets = vec![vec![]; rem_layers];
+        let mut mul_subsets = vec![vec![]; rem_layers];
 
         for (gate_index, gate) in self.layers[layer_id].gates.iter().enumerate() {
-            let [(l_layer_id, _), (r_layer_id, _)] = gate.inputs;
-            let [norm_l_layer_id, norm_r_layer_id] =
-                [layer_count - l_layer_id, layer_count - r_layer_id];
+            // v subset population
+            // the goal here is to have a shadow layer for every layer
+            // after the target layer.
+            // each shadow layer only contains gates that contribute to
+            // the input of the target layer.
+            // we already initially empty shadow layers, here for each
+            // gate input we determine what shadow layer it belong to and
+            // push
 
-            // populate the v subset vectors
-            v_subsets[norm_l_layer_id].push(gate.inputs[0].1);
-            v_subsets[norm_r_layer_id].push(gate.inputs[1].1);
+            // compute the relative layer index for the inputs
+            let [norm_left, norm_right] = [
+                norm_layer_id(gate.inputs[0].0),
+                norm_layer_id(gate.inputs[1].0),
+            ];
+
+            v_subsets[norm_left].push(gate.inputs[0].1);
+            v_subsets[norm_right].push(gate.inputs[1].1);
+
+            // build the add_i / mul_i entry based on v_subset
+            let sparse_entry = [
+                gate_index,
+                v_subsets[norm_left].len() - 1,
+                v_subsets[norm_right].len() - 1,
+            ];
 
             if gate.op == GateOp::Add {
-                dbg!(norm_l_layer_id);
-                dbg!(norm_r_layer_id);
-
-                add_subsets[norm_l_layer_id + norm_r_layer_id].push([
-                    gate_index,
-                    v_subsets[norm_l_layer_id].len() - 1,
-                    v_subsets[norm_r_layer_id].len() - 1,
-                ]);
+                add_subsets[norm_left + norm_right].push(sparse_entry);
             } else {
-                dbg!(norm_l_layer_id);
-                dbg!(norm_r_layer_id);
-
-                mul_subsets[norm_l_layer_id + norm_r_layer_id].push([
-                    gate_index,
-                    v_subsets[norm_l_layer_id].len() - 1,
-                    v_subsets[norm_r_layer_id].len() - 1,
-                ]);
+                mul_subsets[norm_left + norm_right].push(sparse_entry);
             }
-
-            //dbg!(&add_subsets);
-            //dbg!(&mul_subsets);
         }
 
         LayerProvingInfo {
+            layer_id,
             v_subsets,
             add_subsets,
             mul_subsets,
@@ -353,9 +359,10 @@ mod test {
         assert_eq!(
             output_layer_proving_info,
             LayerProvingInfo {
+                layer_id: 0,
                 v_subsets: vec![vec![0, 1], vec![3], vec![2]],
-                add_subsets: vec![vec![], vec![], vec![[0, 0, 1]]],
-                mul_subsets: vec![vec![], vec![[1, 1, 3]], vec![]]
+                add_subsets: vec![vec![], vec![], vec![[0, 0, 0]]],
+                mul_subsets: vec![vec![], vec![[1, 1, 0]], vec![]]
             }
         );
     }

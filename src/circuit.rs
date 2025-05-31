@@ -43,7 +43,10 @@ impl GeneralCircuit {
         // input: constraint: layer_id cannot point to the input layer
         assert_ne!(layer_id, self.layers.len() - 1);
 
-        // TODO: add documentation for this section
+        // given some global layer id after the target id
+        // converts that to the relative id from the target id
+        // example: if target_id = i, then layer i + 1 will have
+        // relative id = 0
         let norm_layer_id = |id: LayerId| id - layer_id - 1;
 
         // determines the number of layers after the target layer
@@ -60,9 +63,9 @@ impl GeneralCircuit {
             // after the target layer.
             // each shadow layer only contains gates that contribute to
             // the input of the target layer.
-            // we already initially empty shadow layers, here for each
-            // gate input we determine what shadow layer it belong to and
-            // push
+            // we already initialized empty shadow layers.
+            // for each gate input we determine what shadow layer
+            // it belongs to and push
 
             // compute the relative layer index for the inputs
             let [norm_left, norm_right] = [

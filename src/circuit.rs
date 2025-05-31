@@ -53,7 +53,7 @@ impl GeneralCircuit {
         let rem_layers = self.layers.len() - layer_id;
 
         // init subset vectors
-        let mut v_subsets = vec![vec![]; rem_layers];
+        let mut v_subset_instruction = vec![vec![]; rem_layers];
         let mut add_subsets = vec![vec![]; rem_layers];
         let mut mul_subsets = vec![vec![]; rem_layers];
 
@@ -73,14 +73,14 @@ impl GeneralCircuit {
                 norm_layer_id(gate.inputs[1].0),
             ];
 
-            v_subsets[norm_left].push(gate.inputs[0].1);
-            v_subsets[norm_right].push(gate.inputs[1].1);
+            v_subset_instruction[norm_left].push(gate.inputs[0].1);
+            v_subset_instruction[norm_right].push(gate.inputs[1].1);
 
             // build the add_i / mul_i entry based on v_subset
             let sparse_entry = [
                 gate_index,
-                v_subsets[norm_left].len() - 1,
-                v_subsets[norm_right].len() - 1,
+                v_subset_instruction[norm_left].len() - 1,
+                v_subset_instruction[norm_right].len() - 1,
             ];
 
             if gate.op == GateOp::Add {
@@ -92,7 +92,7 @@ impl GeneralCircuit {
 
         LayerProvingInfo {
             layer_id,
-            v_subsets,
+            v_subset_instruction,
             add_subsets,
             mul_subsets,
         }
@@ -359,7 +359,7 @@ mod test {
             output_layer_proving_info,
             LayerProvingInfo {
                 layer_id: 0,
-                v_subsets: vec![vec![0, 1], vec![3], vec![2]],
+                v_subset_instruction: vec![vec![0, 1], vec![3], vec![2]],
                 add_subsets: vec![vec![], vec![], vec![[0, 0, 0]]],
                 mul_subsets: vec![vec![], vec![[1, 1, 0]], vec![]]
             }

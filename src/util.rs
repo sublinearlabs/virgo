@@ -10,8 +10,9 @@ pub type GateAddr = (LayerId, usize);
 pub(crate) struct LayerProvingInfo {
     /// Layer Id we generated the proving info for
     pub(crate) layer_id: usize,
-    /// Subset values v for some given layer id
-    pub(crate) v_subsets: Vec<Vec<usize>>,
+    /// Instructions on how to extract the v subset values
+    /// from an evaluation vector
+    pub(crate) v_subset_instruction: Vec<Vec<usize>>,
     /// Subset add i's based on subset v's
     pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,
     /// Subset mul i's based on subset v's
@@ -25,7 +26,7 @@ impl LayerProvingInfo {
     ) -> LayerProvingInfoWithSubset<F> {
         let subset_evaluations = &evaluations[(self.layer_id + 1)..];
         let concrete_subset_values = self
-            .v_subsets
+            .v_subset_instruction
             .iter()
             .zip(subset_evaluations)
             .map(|(inst, data)| {
@@ -44,7 +45,7 @@ impl LayerProvingInfo {
 }
 
 pub(crate) struct LayerProvingInfoWithSubset<F> {
-    // TODO: add documentation
+    /// Subset values v for some given layer id
     pub(crate) v_subsets: Vec<Vec<F>>,
     /// Subset add i's based on subset v's
     pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,

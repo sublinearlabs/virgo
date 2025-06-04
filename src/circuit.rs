@@ -381,5 +381,16 @@ mod test {
                 vec![F::from_canonical_u32(3)]
             ]
         );
+
+        let output_layer_proving_info = circuit.generate_layer_proving_info(1);
+        assert_eq!(
+            output_layer_proving_info,
+            LayerProvingInfo {
+                layer_id: 1,
+                v_subset_instruction: vec![vec![0, 1, 2], vec![3]],
+                add_subsets: vec![vec![], vec![[1, 2, 0]]],
+                mul_subsets: vec![vec![[0, 0, 1]], vec![]]
+            }
+        );
     }
 }

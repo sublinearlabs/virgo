@@ -1,5 +1,6 @@
 use libra::utils::{build_phase_one_libra_sumcheck_poly, initialize_phase_one};
-use p3_field::{ExtensionField, Field};
+use p3_field::{AbstractExtensionField, ExtensionField, Field};
+use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
 
 /// Type alias for layer id
 pub type LayerId = usize;
@@ -62,6 +63,7 @@ pub(crate) struct LayerProvingInfoWithSubset<F> {
 pub fn vi_s_n_to_1_folding<F: Field, E: ExtensionField<F>>(
     r_s: &[&[E]],
     vi_evaluations: &[E],
+    cki: Vec<E>,
     alphas: &[E],
 ) {
     let depth_from_layer = vi_evaluations.len();
@@ -71,6 +73,47 @@ pub fn vi_s_n_to_1_folding<F: Field, E: ExtensionField<F>>(
     assert_eq!(alphas.len(), depth_from_layer);
 
     todo!();
+}
+
+fn build_cki<F: Field, E: ExtensionField<F>>() -> Vec<E> {
+    todo!()
+}
+
+// Algorithm 6
+pub fn build_agi<F: Field, E: ExtensionField<F>>(
+    random_numbers: Vec<Vec<E>>,
+    v_subset: Vec<Vec<F>>,
+) {
+    dbg!(&v_subset);
+
+    for i in 0..v_subset.len() {
+        let mut subset = v_subset[i].clone();
+        if subset.len() == 1 {
+            subset.extend(vec![F::zero()]);
+        }
+        if !subset.len().is_power_of_two() {
+            subset.extend(vec![
+                F::zero();
+                subset.len().next_power_of_two() - subset.len()
+            ]);
+        }
+        let n_vars = (subset.len() as f64).log2() as usize;
+        let poly = MultilinearPoly::<F, E>::new_from_vec(
+            n_vars,
+            subset
+                .iter()
+                .map(|val| Fields::<F, E>::Base(*val))
+                .collect(),
+        );
+        dbg!(
+            &poly.evaluate(
+                &random_numbers[i]
+                    .iter()
+                    .map(|val| Fields::Extension(*val))
+                    .collect::<Vec<Fields<F, E>>>()
+            )
+        );
+    }
 }
 
 pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
@@ -145,6 +188,8 @@ mod tests {
         util::build_virgo_ahg,
     };
 
+    use super::build_agi;
+
     #[test]
     fn test_n_to_1_folding() {
         // Build circuit
@@ -192,5 +237,43 @@ mod tests {
         );
 
         dbg!(&virgo_ahg);
+    }
+
+    #[test]
+    fn test_build_agi() {
+        // Build circuit
+        let circuit = circuit_1();
+
+        // Evaluate circuit on input
+        let layer_evaluations = circuit.eval(
+            &[1, 2, 3, 4, 5, 6]
+                .iter()
+                .map(|val| Goldilocks::from_canonical_usize(*val))
+                .collect::<Vec<Goldilocks>>(),
+        );
+
+        // Generate sumcheck eqn for layer 1
+        let layer_index = 1;
+        let total_gates_in_layer = 2;
+
+        let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
+
+        let layer_evaluation = &layer_evaluations[layer_index];
+
+        let proving_info_with_subsets = layer_proving_info.extract_subsets(&layer_evaluations);
+
+        // The random challenges of each layer
+        let random_numbers: Vec<Vec<Goldilocks>> = vec![
+            vec![0_usize, 0]
+                .iter()
+                .map(|val| Goldilocks::from_canonical_usize(*val))
+                .collect::<Vec<Goldilocks>>(),
+            vec![0_usize]
+                .iter()
+                .map(|val| Goldilocks::from_canonical_usize(*val))
+                .collect::<Vec<Goldilocks>>(),
+        ];
+
+        let v = build_agi(random_numbers, proving_info_with_subsets.v_subsets);
     }
 }

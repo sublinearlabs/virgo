@@ -188,7 +188,7 @@ impl Gate {
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use crate::{
         circuit::{Gate, GateOp, GeneralCircuit, Layer},
         circuit_builder::Builder,
@@ -213,7 +213,7 @@ mod test {
         ])
     }
 
-    fn circuit_1() -> GeneralCircuit {
+    pub fn circuit_1() -> GeneralCircuit {
         let mut builder = Builder::init();
 
         // input layer

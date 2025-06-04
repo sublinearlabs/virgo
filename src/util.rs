@@ -123,16 +123,12 @@ pub fn phase_one<F: Field, E: ExtensionField<F>>(
 
     assert_eq!(f1.len(), depth_from_layer);
 
-    dbg!(&f1);
-
     for layer_index in 0..f1.len() {
         for [z, x, y] in &f1[layer_index] {
             // It is assumed the operation poly outputs 1 where there is a valid gate
             res[*x] += igz[*z] * vi_subset[layer_index][*y];
         }
     }
-
-    dbg!(&res);
 
     res
 }

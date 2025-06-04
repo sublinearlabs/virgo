@@ -74,14 +74,13 @@ impl GeneralCircuit {
             ];
 
             v_subset_instruction[norm_left].push(gate.inputs[0].1);
+            let left_sparse_index = v_subset_instruction[norm_left].len() - 1;
+
             v_subset_instruction[norm_right].push(gate.inputs[1].1);
+            let right_sparse_index = v_subset_instruction[norm_right].len() - 1;
 
             // build the add_i / mul_i entry based on v_subset
-            let sparse_entry = [
-                gate_index,
-                v_subset_instruction[norm_left].len() - 1,
-                v_subset_instruction[norm_right].len() - 1,
-            ];
+            let sparse_entry = [gate_index, left_sparse_index, right_sparse_index];
 
             if gate.op == GateOp::Add {
                 add_subsets[norm_left + norm_right].push(sparse_entry);

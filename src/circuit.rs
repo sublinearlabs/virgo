@@ -41,7 +41,7 @@ impl GeneralCircuit {
     /// Return circuit information needed to run virgo sumcheck
     pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
         // input: constraint: layer_id cannot point to the input layer
-        assert_ne!(layer_id, self.layers.len() - 1);
+        assert_ne!(layer_id, self.layers.len());
 
         // given some global layer id after the target id
         // converts that to the relative id from the target id

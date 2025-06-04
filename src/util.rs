@@ -78,6 +78,7 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
     circuit_depth: usize,
     igz: &[E],
     layer_proving_info: &LayerProvingInfoWithSubset<F>,
+    total_gates_in_layer: usize,
 ) -> (Vec<E>, Vec<E>, Vec<E>) {
     let depth_from_layer = circuit_depth - layer_index - 1;
 
@@ -87,6 +88,7 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
         &layer_proving_info.add_subsets,
         &layer_proving_info.v_subsets,
         depth_from_layer,
+        total_gates_in_layer,
     );
 
     let add_c_ahg = phase_one(
@@ -94,6 +96,7 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
         &layer_proving_info.add_subsets,
         &layer_proving_info.v_subsets,
         depth_from_layer,
+        total_gates_in_layer,
     );
 
     let mul_ahg = phase_one(
@@ -101,6 +104,7 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
         &layer_proving_info.mul_subsets,
         &layer_proving_info.v_subsets,
         depth_from_layer,
+        total_gates_in_layer,
     );
 
     (add_b_ahg, add_c_ahg, mul_ahg)
@@ -111,17 +115,18 @@ pub fn phase_one<F: Field, E: ExtensionField<F>>(
     f1: &Vec<Vec<[usize; 3]>>,
     vi_subset: &Vec<Vec<F>>,
     depth_from_layer: usize,
+    total_gates_in_layer: usize,
 ) -> Vec<E> {
     // The total number of inputs to a layer cant be more than (2 * total gates in layer)
     // since the circuit is fan in 2
-    let mut res = vec![E::zero(); 2 * f1.len()];
+    let mut res = vec![E::zero(); 2 * total_gates_in_layer];
 
     assert_eq!(f1.len(), depth_from_layer);
 
+    dbg!(&f1);
+
     for layer_index in 0..f1.len() {
         for [z, x, y] in &f1[layer_index] {
-            dbg!(&vi_subset[0][*x]);
-            dbg!(&vi_subset[layer_index][*y]);
             // It is assumed the operation poly outputs 1 where there is a valid gate
             res[*x] += igz[*z] * vi_subset[layer_index][*y];
         }
@@ -144,37 +149,10 @@ mod tests {
         util::build_virgo_ahg,
     };
 
-    pub fn circuit_2() -> GeneralCircuit {
-        let mut builder = Builder::init();
-
-        // input layer
-        let a = builder.create_input_node();
-        let b = builder.create_input_node();
-        let c = builder.create_input_node();
-        let d = builder.create_input_node();
-        let e = builder.create_input_node();
-        let f = builder.create_input_node();
-
-        let g = builder.add_node(a, b, &GateOp::Add);
-        let h = builder.add_node(a, b, &GateOp::Mul);
-        let j = builder.add_node(c, d, &GateOp::Add);
-        let k = builder.add_node(e, f, &GateOp::Add);
-
-        let l = builder.add_node(g, h, &GateOp::Mul);
-        let m = builder.add_node(j, d, &GateOp::Add);
-        // let n = builder.add_node(k, f, &GateOp::Add);
-
-        // output layer
-        builder.add_node(l, c, &GateOp::Add);
-        builder.add_node(m, k, &GateOp::Mul);
-
-        builder.build_circuit()
-    }
-
     #[test]
     fn test_n_to_1_folding() {
         // Build circuit
-        let circuit = circuit_2();
+        let circuit = circuit_1();
 
         // Evaluate circuit on input
         let layer_evaluations = circuit.eval(
@@ -192,24 +170,30 @@ mod tests {
                 .collect::<Vec<Goldilocks>>()
         );
 
-        // Generate sumcheck eqn for layer 1 and prove it
+        // Generate sumcheck eqn for layer 1
         let layer_index = 1;
+        let total_gates_in_layer = 2;
 
         let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
 
-        // dbg!(&layer_proving_info);
-
         let layer_evaluation = &layer_evaluations[layer_index];
-
-        // dbg!(&layer_evaluation);
 
         let proving_info_with_subsets = layer_proving_info.extract_subsets(&layer_evaluations);
 
-        // dbg!(&proving_info_with_subsets);
+        let igz = generate_eq(
+            &[3_usize]
+                .iter()
+                .map(|val| Goldilocks::from_canonical_usize(*val))
+                .collect::<Vec<Goldilocks>>(),
+        );
 
-        let igz = generate_eq(&[Goldilocks::from_canonical_usize(3)]);
-
-        let virgo_ahg = build_virgo_ahg(layer_index, 4, &igz, &proving_info_with_subsets);
+        let virgo_ahg = build_virgo_ahg(
+            layer_index,
+            4,
+            &igz,
+            &proving_info_with_subsets,
+            total_gates_in_layer,
+        );
 
         dbg!(&virgo_ahg);
     }

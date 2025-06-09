@@ -72,38 +72,21 @@ pub fn vi_s_n_to_1_folding<F: Field, E: ExtensionField<F>>(
 }
 
 fn build_cki<F: Field, E: ExtensionField<F>>(
-    circuit: GeneralCircuit,
-    layer_id: usize,
-    evaluations: Vec<Vec<F>>,
-) {
-    let circuit_info = generate_circuit_info_for_cki(&circuit, layer_id).1;
-    let layer_proving_info = circuit.generate_layer_proving_info(layer_id);
-    let layer_proving_info_with_subset = layer_proving_info
-        .clone()
-        .extract_subsets(&evaluations)
-        .v_subsets;
-    let layer_proving_info = circuit.generate_layer_proving_info(layer_id).mul_subsets;
+    layer_proving_info: &LayerProvingInfo,
+    layer_proving_info_with_subset: &Vec<Vec<F>>,
+) -> Vec<Vec<(usize, usize)>> {
+    let mut res = vec![];
 
-    dbg!(&layer_proving_info_with_subset);
-
-    for layer_index in 0..layer_proving_info.len() {
-        let layer = &layer_proving_info[layer_index];
-        for [z, x, y] in layer {
-            dbg!("Subset", [z, x, y]);
-            // It is assumed the operation poly outputs 1 where there is a valid gate
-            dbg!(&layer_proving_info_with_subset[0][*x]);
-            dbg!(&layer_proving_info_with_subset[layer_index][*y]);
+    for i in 0..layer_proving_info_with_subset.len() {
+        let subset = &layer_proving_info_with_subset[i];
+        let mut layer_res = vec![];
+        for j in 0..subset.len() {
+            layer_res.push((j, layer_proving_info.v_subset_instruction[i][j]));
         }
+        res.push(layer_res);
     }
 
-    for layer_index in 0..circuit_info.len() {
-        let layer = &circuit_info[layer_index];
-        for [z, x, y] in layer {
-            dbg!("circuit", [z, x, y]);
-            dbg!(&evaluations[layer_id + 1][*x]);
-            dbg!(&evaluations[layer_id + 1 + layer_index][*y]);
-        }
-    }
+    res
 }
 
 // Algorithm 6
@@ -120,43 +103,30 @@ pub fn build_agi<F: Field, E: ExtensionField<F>>(
     // The total gates a layer has (total add gates + total mul gates)
     total_gates_in_layer: usize,
     // Where vi and vi_subset aligns
-    cki: Vec<[usize; 2]>,
+    cki: &Vec<Vec<(usize, usize)>>,
     // The ci poly for the current layer
-    ci: Vec<[usize; 2]>,
+    ci: &Vec<(usize, usize)>,
 ) -> Vec<E> {
     let depth_from_layer = layer_proving_info.v_subsets.len();
 
-    // TODO: Uncomment
-    // assert_eq!(rc_s.len(), depth_from_layer);
-    // assert_eq!(alphas.len(), depth_from_layer);
-    // assert_eq!(alphas.len(), depth_from_layer);
-
-    // TODO: Assert cki length
+    assert_eq!(rc_s.len(), depth_from_layer);
+    assert_eq!(alphas.len(), depth_from_layer);
+    assert_eq!(alphas.len(), depth_from_layer);
+    assert_eq!(cki.len(), depth_from_layer);
 
     let mut res = vec![E::zero(); 2 * total_gates_in_layer];
 
     for k in 0..layer_proving_info.v_subsets.len() {
-        // let mut subset = layer_proving_info.v_subsets[k].clone();
-        // if subset.len() == 1 {
-        //     subset.extend(vec![F::zero()]);
-        // }
-        // if !subset.len().is_power_of_two() {
-        //     subset.extend(vec![
-        //         F::zero();
-        //         subset.len().next_power_of_two() - subset.len()
-        //     ]);
-        // }
-
         let igz_for_r_k = generate_eq(&rc_s[k]);
 
-        for [t, x] in &cki {
+        for (t, x) in &cki[k] {
             res[*x] += alphas[k] * igz_for_r_k[*t];
         }
 
         // Get igz for rb
         let igz_for_rb = generate_eq(&rb);
 
-        for [t, x] in &ci {
+        for (t, x) in ci {
             res[*x] += rb_alpha * igz_for_rb[*t];
         }
     }
@@ -328,7 +298,7 @@ mod tests {
 
         // Generate sumcheck eqn for layer 1
         let layer_index = 0;
-        let total_gates_in_layer = 4;
+        let total_gates_in_layer = 2;
 
         let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
 
@@ -346,7 +316,7 @@ mod tests {
                 .iter()
                 .map(|val| Goldilocks::from_canonical_usize(*val))
                 .collect::<Vec<Goldilocks>>(),
-            vec![0_usize, 1, 5]
+            vec![0_usize, 1, 1]
                 .iter()
                 .map(|val| Goldilocks::from_canonical_usize(*val))
                 .collect::<Vec<Goldilocks>>(),
@@ -357,18 +327,21 @@ mod tests {
             .map(|val| Goldilocks::from_canonical_usize(*val))
             .collect::<Vec<Goldilocks>>();
 
-        let rb = vec![7_usize]
+        let rb = vec![1_usize]
             .iter()
             .map(|val| Goldilocks::from_canonical_usize(*val))
             .collect::<Vec<Goldilocks>>();
 
         let rb_alpha = Goldilocks::from_canonical_usize(4);
 
-        let cki = vec![];
+        let cki = &build_cki::<Goldilocks, BinomialExtensionField<Goldilocks, 2>>(
+            &layer_proving_info,
+            &proving_info_with_subsets.v_subsets,
+        );
 
-        let ci = vec![];
+        let ci = &cki[0];
 
-        let _ = build_agi(
+        let agi = build_agi(
             rb,
             rc_s,
             proving_info_with_subsets.clone(),
@@ -379,14 +352,6 @@ mod tests {
             ci,
         );
 
-        // let v = circuit.generate_circuit_info_for_cki(layer_index);
-        let v = build_cki::<Goldilocks, BinomialExtensionField<Goldilocks, 2>>(
-            // 0 = add, 1 = mul
-            circuit,
-            layer_index,
-            layer_evaluations,
-        );
-
-        dbg!(&v);
+        dbg!(&agi);
     }
 }

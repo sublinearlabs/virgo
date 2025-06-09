@@ -70,11 +70,18 @@ impl GeneralCircuit {
                 norm_layer_id(gate.inputs[1].0),
             ];
 
-            v_subset_instruction[norm_left].push(gate.inputs[0].1);
-            let left_sparse_index = v_subset_instruction[norm_left].len() - 1;
+            let mut left_sparse_index = 0;
+            let mut right_sparse_index = 0;
 
-            v_subset_instruction[norm_right].push(gate.inputs[1].1);
-            let right_sparse_index = v_subset_instruction[norm_right].len() - 1;
+            if !v_subset_instruction[norm_left].contains(&gate.inputs[0].1) {
+                v_subset_instruction[norm_left].push(gate.inputs[0].1);
+                left_sparse_index = v_subset_instruction[norm_left].len() - 1;
+            }
+
+            if !v_subset_instruction[norm_right].contains(&gate.inputs[1].1) {
+                v_subset_instruction[norm_right].push(gate.inputs[1].1);
+                right_sparse_index = v_subset_instruction[norm_right].len() - 1;
+            }
 
             // build the add_i / mul_i entry based on v_subset
             let sparse_entry = [gate_index, left_sparse_index, right_sparse_index];

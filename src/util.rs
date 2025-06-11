@@ -106,6 +106,8 @@ pub fn build_agi<F: Field, E: ExtensionField<F>>(
     cki: &Vec<Vec<(usize, usize)>>,
     // The ci poly for the current layer
     ci: &Vec<(usize, usize)>,
+
+    vi_subset: &Vec<Vec<F>>,
 ) -> Vec<E> {
     let depth_from_layer = layer_proving_info.v_subsets.len();
 
@@ -120,14 +122,19 @@ pub fn build_agi<F: Field, E: ExtensionField<F>>(
         let igz_for_r_k = generate_eq(&rc_s[k]);
 
         for (t, x) in &cki[k] {
-            res[*x] += alphas[k] * igz_for_r_k[*t];
+            // res[*x] += alphas[k] * igz_for_r_k[*t];
+            res[*x] += igz_for_r_k[*t] * vi_subset[k][*t] * alphas[k];
         }
+
+        dbg!(&res);
+        dbg!(&vi_subset[k]);
 
         // Get igz for rb
         let igz_for_rb = generate_eq(&rb);
 
         for (t, x) in ci {
-            res[*x] += rb_alpha * igz_for_rb[*t];
+            // res[*x] += rb_alpha * igz_for_rb[*t];
+            res[*x] += igz_for_rb[*t] * vi_subset[0][*t] * rb_alpha;
         }
     }
 
@@ -322,7 +329,7 @@ mod tests {
                 .collect::<Vec<Goldilocks>>(),
         ];
 
-        let alphas: Vec<Goldilocks> = vec![2_usize, 3, 5]
+        let alphas: Vec<Goldilocks> = vec![1_usize, 1, 1]
             .iter()
             .map(|val| Goldilocks::from_canonical_usize(*val))
             .collect::<Vec<Goldilocks>>();
@@ -332,7 +339,7 @@ mod tests {
             .map(|val| Goldilocks::from_canonical_usize(*val))
             .collect::<Vec<Goldilocks>>();
 
-        let rb_alpha = Goldilocks::from_canonical_usize(4);
+        let rb_alpha = Goldilocks::from_canonical_usize(1);
 
         let cki = &build_cki::<Goldilocks, BinomialExtensionField<Goldilocks, 2>>(
             &layer_proving_info,
@@ -350,6 +357,7 @@ mod tests {
             total_gates_in_layer,
             cki,
             ci,
+            &proving_info_with_subsets.v_subsets,
         );
 
         dbg!(&agi);

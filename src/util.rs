@@ -72,16 +72,16 @@ pub fn vi_s_n_to_1_folding<F: Field, E: ExtensionField<F>>(
 }
 
 fn build_cki<F: Field, E: ExtensionField<F>>(
-    layer_proving_info: &LayerProvingInfo,
-    layer_proving_info_with_subset: &Vec<Vec<F>>,
+    vi_subset_instruction: &Vec<Vec<usize>>,
+    subset: &Vec<Vec<F>>,
 ) -> Vec<Vec<(usize, usize)>> {
     let mut res = vec![];
 
-    for i in 0..layer_proving_info_with_subset.len() {
-        let subset = &layer_proving_info_with_subset[i];
+    for i in 0..subset.len() {
+        let subset = &subset[i];
         let mut layer_res = vec![];
         for j in 0..subset.len() {
-            layer_res.push((j, layer_proving_info.v_subset_instruction[i][j]));
+            layer_res.push((j, vi_subset_instruction[i][j]));
         }
         res.push(layer_res);
     }
@@ -122,19 +122,16 @@ pub fn build_agi<F: Field, E: ExtensionField<F>>(
         let igz_for_r_k = generate_eq(&rc_s[k]);
 
         for (t, x) in &cki[k] {
-            // res[*x] += alphas[k] * igz_for_r_k[*t];
-            res[*x] += igz_for_r_k[*t] * vi_subset[k][*t] * alphas[k];
+            res[*x] += alphas[k] * igz_for_r_k[*t];
+            // res[*x] += igz_for_r_k[*t] * vi_subset[k][*t] * alphas[k];
         }
-
-        dbg!(&res);
-        dbg!(&vi_subset[k]);
 
         // Get igz for rb
         let igz_for_rb = generate_eq(&rb);
 
         for (t, x) in ci {
-            // res[*x] += rb_alpha * igz_for_rb[*t];
-            res[*x] += igz_for_rb[*t] * vi_subset[0][*t] * rb_alpha;
+            res[*x] += rb_alpha * igz_for_rb[*t];
+            // res[*x] += igz_for_rb[*t] * vi_subset[0][*t] * rb_alpha;
         }
     }
 
@@ -263,7 +260,7 @@ mod tests {
         );
 
         // Generate sumcheck eqn for layer 1
-        let layer_index = 1;
+        let layer_index = 0;
         let total_gates_in_layer = 2;
 
         let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
@@ -288,6 +285,38 @@ mod tests {
         );
 
         dbg!(&virgo_ahg);
+    }
+
+    #[test]
+    fn test_build_cki() {
+        // Build circuit
+        let circuit = circuit_1();
+
+        // Evaluate circuit on input
+        let layer_evaluations = circuit.eval(
+            &[1, 2, 3, 4, 5, 6]
+                .iter()
+                .map(|val| Goldilocks::from_canonical_usize(*val))
+                .collect::<Vec<Goldilocks>>(),
+        );
+
+        // Generate sumcheck eqn for layer 0
+        let layer_index = 0;
+
+        let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
+
+        let proving_info_with_subsets = layer_proving_info
+            .clone()
+            .extract_subsets(&layer_evaluations);
+
+        let cki = &build_cki::<Goldilocks, BinomialExtensionField<Goldilocks, 2>>(
+            &layer_proving_info.v_subset_instruction,
+            &proving_info_with_subsets.v_subsets,
+        );
+
+        assert_eq!(cki[0], vec![(0, 0), (1, 1)]);
+        assert_eq!(cki[1], vec![(0, 3)]);
+        assert_eq!(cki[2], vec![(0, 2)]);
     }
 
     #[test]
@@ -342,7 +371,7 @@ mod tests {
         let rb_alpha = Goldilocks::from_canonical_usize(1);
 
         let cki = &build_cki::<Goldilocks, BinomialExtensionField<Goldilocks, 2>>(
-            &layer_proving_info,
+            &layer_proving_info.v_subset_instruction,
             &proving_info_with_subsets.v_subsets,
         );
 

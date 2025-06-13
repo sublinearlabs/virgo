@@ -40,9 +40,6 @@ impl GeneralCircuit {
 
     /// Return circuit information needed to run virgo sumcheck
     pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
-        // input: constraint: layer_id cannot point to the input layer
-        assert_ne!(layer_id, self.layers.len());
-
         // given some global layer id after the target id
         // converts that to the relative id from the target id
         // example: if target_id = i, then layer i + 1 will have
@@ -194,7 +191,7 @@ impl Gate {
 }
 
 #[cfg(test)]
-pub mod test {
+pub(crate) mod test {
     use crate::{
         circuit::{Gate, GateOp, GeneralCircuit, Layer},
         circuit_builder::Builder,
@@ -219,7 +216,7 @@ pub mod test {
         ])
     }
 
-    pub fn circuit_1() -> GeneralCircuit {
+    pub(crate) fn circuit_1() -> GeneralCircuit {
         let mut builder = Builder::init();
 
         // input layer

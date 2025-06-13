@@ -128,13 +128,31 @@ pub fn phase_one<F: Field, E: ExtensionField<F>>(
     res
 }
 
+pub(crate) fn build_cki(vi_subset_instruction: &Vec<Vec<usize>>) -> Vec<Vec<(usize, usize)>> {
+    let mut res = vec![];
+
+    for i in 0..vi_subset_instruction.len() {
+        let subset = &vi_subset_instruction[i];
+        let mut layer_res = vec![];
+        for j in 0..subset.len() {
+            layer_res.push((j, vi_subset_instruction[i][j]));
+        }
+        res.push(layer_res);
+    }
+
+    res
+}
+
 #[cfg(test)]
 mod tests {
     use libra::utils::generate_eq;
     use p3_field::AbstractField;
     use p3_goldilocks::Goldilocks;
 
-    use crate::{circuit::test::circuit_1, util::build_virgo_ahg};
+    use crate::{
+        circuit::test::circuit_1,
+        util::{build_cki, build_virgo_ahg},
+    };
 
     #[test]
     fn test_build_ahg() {
@@ -183,5 +201,21 @@ mod tests {
         );
 
         dbg!(&virgo_ahg);
+    }
+
+    #[test]
+    fn test_build_cki() {
+        // Build circuit
+        let circuit = circuit_1();
+
+        let layer_index = 0;
+
+        let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
+
+        let cki = &build_cki(&layer_proving_info.v_subset_instruction);
+
+        assert_eq!(cki[0], vec![(0, 0), (1, 1)]);
+        assert_eq!(cki[1], vec![(0, 3)]);
+        assert_eq!(cki[2], vec![(0, 2)]);
     }
 }

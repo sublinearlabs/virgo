@@ -7,7 +7,7 @@ pub type LayerId = usize;
 /// Position of a gate, given it's layer id and index
 pub type GateAddr = (LayerId, usize);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 /// Represents partial components needed to perform sumcheck for the `GeneralCircuit`
 /// with concrete subset values
 pub(crate) struct LayerProvingInfo {

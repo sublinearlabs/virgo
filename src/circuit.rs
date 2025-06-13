@@ -40,9 +40,6 @@ impl GeneralCircuit {
 
     /// Return circuit information needed to run virgo sumcheck
     pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
-        // input: constraint: layer_id cannot point to the input layer
-        assert_ne!(layer_id, self.layers.len());
-
         // given some global layer id after the target id
         // converts that to the relative id from the target id
         // example: if target_id = i, then layer i + 1 will have
@@ -73,11 +70,18 @@ impl GeneralCircuit {
                 norm_layer_id(gate.inputs[1].0),
             ];
 
-            v_subset_instruction[norm_left].push(gate.inputs[0].1);
-            let left_sparse_index = v_subset_instruction[norm_left].len() - 1;
+            let mut left_sparse_index = 0;
+            let mut right_sparse_index = 0;
 
-            v_subset_instruction[norm_right].push(gate.inputs[1].1);
-            let right_sparse_index = v_subset_instruction[norm_right].len() - 1;
+            if !v_subset_instruction[norm_left].contains(&gate.inputs[0].1) {
+                v_subset_instruction[norm_left].push(gate.inputs[0].1);
+                left_sparse_index = v_subset_instruction[norm_left].len() - 1;
+            }
+
+            if !v_subset_instruction[norm_right].contains(&gate.inputs[1].1) {
+                v_subset_instruction[norm_right].push(gate.inputs[1].1);
+                right_sparse_index = v_subset_instruction[norm_right].len() - 1;
+            }
 
             // build the add_i / mul_i entry based on v_subset
             let sparse_entry = [gate_index, left_sparse_index, right_sparse_index];
@@ -187,7 +191,7 @@ impl Gate {
 }
 
 #[cfg(test)]
-pub mod test {
+pub(crate) mod test {
     use crate::{
         circuit::{Gate, GateOp, GeneralCircuit, Layer},
         circuit_builder::Builder,
@@ -212,7 +216,7 @@ pub mod test {
         ])
     }
 
-    pub fn circuit_1() -> GeneralCircuit {
+    pub(crate) fn circuit_1() -> GeneralCircuit {
         let mut builder = Builder::init();
 
         // input layer

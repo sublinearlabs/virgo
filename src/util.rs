@@ -1,4 +1,3 @@
-use libra::utils::{build_phase_one_libra_sumcheck_poly, initialize_phase_one};
 use p3_field::{ExtensionField, Field};
 
 /// Type alias for layer id
@@ -59,20 +58,6 @@ pub(crate) struct LayerProvingInfoWithSubset<F> {
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
 }
 
-pub fn vi_s_n_to_1_folding<F: Field, E: ExtensionField<F>>(
-    r_s: &[&[E]],
-    vi_evaluations: &[E],
-    alphas: &[E],
-) {
-    let depth_from_layer = vi_evaluations.len();
-
-    assert_eq!(r_s.len(), depth_from_layer);
-    assert_eq!(vi_evaluations.len(), depth_from_layer);
-    assert_eq!(alphas.len(), depth_from_layer);
-
-    todo!();
-}
-
 pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
     layer_index: usize,
     circuit_depth: usize,
@@ -82,11 +67,20 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
 ) -> (Vec<E>, Vec<E>, Vec<E>) {
     let depth_from_layer = circuit_depth - layer_index - 1;
 
-    // TODO: use identity for b
+    // Get identity polyynomial for each subset
+    let mut identity = vec![];
+
+    for layer_index in 0..depth_from_layer {
+        identity.push(vec![
+            F::one();
+            layer_proving_info.v_subsets[layer_index].len()
+        ]);
+    }
+
     let add_b_ahg = phase_one(
         igz,
         &layer_proving_info.add_subsets,
-        &layer_proving_info.v_subsets,
+        &identity,
         depth_from_layer,
         total_gates_in_layer,
     );
@@ -122,6 +116,7 @@ pub fn phase_one<F: Field, E: ExtensionField<F>>(
     let mut res = vec![E::zero(); 2 * total_gates_in_layer];
 
     assert_eq!(f1.len(), depth_from_layer);
+    assert_eq!(vi_subset.len(), depth_from_layer);
 
     for layer_index in 0..f1.len() {
         for [z, x, y] in &f1[layer_index] {
@@ -139,14 +134,10 @@ mod tests {
     use p3_field::AbstractField;
     use p3_goldilocks::Goldilocks;
 
-    use crate::{
-        circuit::{GateOp, GeneralCircuit, test::circuit_1},
-        circuit_builder::Builder,
-        util::build_virgo_ahg,
-    };
+    use crate::{circuit::test::circuit_1, util::build_virgo_ahg};
 
     #[test]
-    fn test_n_to_1_folding() {
+    fn test_build_ahg() {
         // Build circuit
         let circuit = circuit_1();
 

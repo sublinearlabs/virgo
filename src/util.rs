@@ -57,14 +57,11 @@ pub(crate) struct LayerProvingInfoWithSubset<F> {
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
 }
 
-pub(crate) fn build_cki<F: Field, E: ExtensionField<F>>(
-    vi_subset_instruction: &Vec<Vec<usize>>,
-    subset: &Vec<Vec<F>>,
-) -> Vec<Vec<(usize, usize)>> {
+pub(crate) fn build_cki(vi_subset_instruction: &Vec<Vec<usize>>) -> Vec<Vec<(usize, usize)>> {
     let mut res = vec![];
 
-    for i in 0..subset.len() {
-        let subset = &subset[i];
+    for i in 0..vi_subset_instruction.len() {
+        let subset = &vi_subset_instruction[i];
         let mut layer_res = vec![];
         for j in 0..subset.len() {
             layer_res.push((j, vi_subset_instruction[i][j]));
@@ -87,27 +84,11 @@ mod tests {
         // Build circuit
         let circuit = circuit_1();
 
-        // Evaluate circuit on input
-        let layer_evaluations = circuit.eval(
-            &[1, 2, 3, 4, 5, 6]
-                .iter()
-                .map(|val| Goldilocks::from_canonical_usize(*val))
-                .collect::<Vec<Goldilocks>>(),
-        );
-
-        // Generate sumcheck eqn for layer 0
         let layer_index = 0;
 
         let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
 
-        let proving_info_with_subsets = layer_proving_info
-            .clone()
-            .extract_subsets(&layer_evaluations);
-
-        let cki = &build_cki::<Goldilocks, BinomialExtensionField<Goldilocks, 2>>(
-            &layer_proving_info.v_subset_instruction,
-            &proving_info_with_subsets.v_subsets,
-        );
+        let cki = &build_cki(&layer_proving_info.v_subset_instruction);
 
         assert_eq!(cki[0], vec![(0, 0), (1, 1)]);
         assert_eq!(cki[1], vec![(0, 3)]);

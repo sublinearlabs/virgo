@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-libra = { git = "https://github.com/sublinearlabs/libra.git", version = "0.1.0" }
 p3-field = "0.2.0"
 p3-goldilocks = "0.2.0"
 sum_check = { git = "https://github.com/sublinearlabs/sl-core.git" }
 poly = { git = "https://github.com/sublinearlabs/sl-core.git" }
+transcript = { git = "https://github.com/sublinearlabs/sl-core.git" }

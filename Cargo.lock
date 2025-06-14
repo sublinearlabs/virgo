@@ -21,17 +21,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9555578bc9e57714c812a1f84e4fc5b4d21fcb063490c624de019f7464c91268"
 
 [[package]]
-name = "circuits"
-version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#f302780d325da1d68c962bba7696c3b4ae36e471"
-dependencies = [
- "p3-field",
- "p3-goldilocks",
- "poly",
- "rand",
-]
-
-[[package]]
 name = "crunchy"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -83,22 +72,6 @@ name = "libc"
 version = "0.2.173"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8cfeafaffdbc32176b64fb251369d52ea9f0a8fbc6f8759edffef7b525d64bb"
-
-[[package]]
-name = "libra"
-version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/libra.git#a7b72a0a47b00706b128b8dba4f37bf835d0dd5b"
-dependencies = [
- "circuits",
- "p3-challenger",
- "p3-field",
- "p3-goldilocks",
- "p3-keccak",
- "p3-mersenne-31",
- "poly",
- "sum_check",
- "transcript",
-]
 
 [[package]]
 name = "num-bigint"
@@ -316,7 +289,7 @@ checksum = "3b3cff922bd51709b605d9ead9aa71031d81447142d828eb4a6eba76fe619f9b"
 [[package]]
 name = "poly"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#f302780d325da1d68c962bba7696c3b4ae36e471"
+source = "git+https://github.com/sublinearlabs/sl-core.git#6d8c0a999f3349daa233a33b446c53b16d3f254d"
 dependencies = [
  "p3-challenger",
  "p3-field",
@@ -411,7 +384,7 @@ checksum = "fe895eb47f22e2ddd4dabc02bce419d2e643c8e3b585c78158b349195bc24d82"
 [[package]]
 name = "sum_check"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#f302780d325da1d68c962bba7696c3b4ae36e471"
+source = "git+https://github.com/sublinearlabs/sl-core.git#6d8c0a999f3349daa233a33b446c53b16d3f254d"
 dependencies = [
  "anyhow",
  "p3-challenger",
@@ -476,7 +449,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#f302780d325da1d68c962bba7696c3b4ae36e471"
+source = "git+https://github.com/sublinearlabs/sl-core.git#6d8c0a999f3349daa233a33b446c53b16d3f254d"
 dependencies = [
  "p3-challenger",
  "p3-field",
@@ -504,11 +477,11 @@ checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
 name = "virgo"
 version = "0.1.0"
 dependencies = [
- "libra",
  "p3-field",
  "p3-goldilocks",
  "poly",
  "sum_check",
+ "transcript",
 ]
 
 [[package]]

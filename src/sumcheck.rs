@@ -1,7 +1,12 @@
-use libra::utils::generate_eq;
-use p3_field::{ExtensionField, Field};
-use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
+use std::rc::Rc;
+
+use p3_field::{ExtensionField, Field, PrimeField32};
+use poly::utils::generate_eq;
+use poly::{Fields, mle::MultilinearPoly, vpoly::VPoly};
+use sum_check::SumCheck;
+use sum_check::interface::SumCheckInterface;
 use sum_check::primitives::SumCheckProof;
+use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
 
@@ -13,9 +18,11 @@ use crate::util::LayerProvingInfoWithSubset;
 // now I need a function that represents phase 1
 
 // TODO: add proper documentation
-fn prove_phase_one<F: Field, E: ExtensionField<F>>(
+fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
+    claimed_sum: Fields<F, E>,
     output_point: &[Fields<F, E>],
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
+    transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
     // what is required to prove phase one
     // we need to generate three bookkeeping tables
@@ -53,17 +60,20 @@ fn prove_phase_one<F: Field, E: ExtensionField<F>>(
         &layer_proving_info.v_subsets,
     );
 
-    // build the v poly
-    // can add a new to next power of two method to sl-core
-    // that pads them
-    //let poly = VPoly::new(
-    //    mles,
-    //    2,
-    //    mles[0]
-    //    combine_fn,
-    //);
+    let mles = [
+        add_b_ahg,
+        add_c_ahg,
+        mul_ahg,
+        layer_proving_info.v_subsets[0].clone(),
+    ]
+    .into_iter()
+    .map(|p| MultilinearPoly::new_extend_to_power_of_two(p, Fields::Base(F::zero())))
+    .collect();
 
-    todo!()
+    // build the vpoly
+    let mut poly = VPoly::new(mles, 2, Rc::new(|evals: &[Fields<F, E>]| evals[0]));
+
+    SumCheck::prove_partial(claimed_sum, &mut poly, transcript).unwrap()
 }
 
 // TODO: add proper documentation

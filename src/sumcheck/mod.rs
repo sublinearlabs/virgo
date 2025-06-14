@@ -3,7 +3,7 @@ mod phase_two;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use phase_one::prove_phase_one;
-use poly::Fields;
+use poly::{Fields, utils::generate_eq};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -15,8 +15,9 @@ fn prove_sumcheck_layer<F: Field + PrimeField32, E: ExtensionField<F>>(
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
-    let phase_one_proof =
-        prove_phase_one(claimed_sum, output_point, layer_proving_info, transcript);
+    let igz = generate_eq(output_point);
+
+    let phase_one_proof = prove_phase_one(&igz, claimed_sum, layer_proving_info, transcript);
     todo!()
 }
 

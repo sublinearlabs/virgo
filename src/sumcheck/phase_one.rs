@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::utils::generate_eq;
 use poly::{Fields, mle::MultilinearPoly, vpoly::VPoly};
 use sum_check::SumCheck;
 use sum_check::interface::SumCheckInterface;
@@ -12,13 +11,11 @@ use crate::util::LayerProvingInfoWithSubset;
 
 // TODO: add proper documentation
 pub(crate) fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
+    igz: &[Fields<F, E>],
     claimed_sum: Fields<F, E>,
-    output_point: &[Fields<F, E>],
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
-    let igz = generate_eq(output_point);
-
     // TODO: document this section
     let add_b_ahg = build_bookkeeping_table_with_identity(
         &igz,

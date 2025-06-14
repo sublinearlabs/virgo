@@ -38,7 +38,7 @@ impl Builder {
     ) -> GateAddr {
         let gate_layer = max(left_child.0, right_child.0) + 1;
 
-        if self.layers.len() <= gate_layer - 1 {
+        if self.layers.len() < gate_layer {
             self.layers.push(vec![]);
         }
 
@@ -110,7 +110,7 @@ mod tests {
 
         let a_x_square_plus_three_x = builder.add_node(a_x_square, three_x, &add);
 
-        let res = builder.add_node(a_x_square_plus_three_x, five, &add);
+        let _ = builder.add_node(a_x_square_plus_three_x, five, &add);
 
         let circuit = builder.build_circuit();
 

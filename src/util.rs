@@ -22,6 +22,7 @@ pub(crate) struct LayerProvingInfo {
 }
 
 impl LayerProvingInfo {
+    #[allow(dead_code)]
     pub(crate) fn extract_subsets<F: Clone>(
         self,
         evaluations: &[Vec<F>],
@@ -58,6 +59,7 @@ pub(crate) struct LayerProvingInfoWithSubset<F> {
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
 }
 
+#[allow(dead_code)]
 pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
     layer_index: usize,
     circuit_depth: usize,
@@ -104,10 +106,11 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
     (add_b_ahg, add_c_ahg, mul_ahg)
 }
 
+#[allow(dead_code)]
 pub fn phase_one<F: Field, E: ExtensionField<F>>(
     igz: &[E],
-    f1: &Vec<Vec<[usize; 3]>>,
-    vi_subset: &Vec<Vec<F>>,
+    f1: &[Vec<[usize; 3]>],
+    vi_subset: &[Vec<F>],
     depth_from_layer: usize,
     total_gates_in_layer: usize,
 ) -> Vec<E> {
@@ -128,14 +131,14 @@ pub fn phase_one<F: Field, E: ExtensionField<F>>(
     res
 }
 
+#[allow(dead_code)]
 pub(crate) fn build_cki(vi_subset_instruction: &Vec<Vec<usize>>) -> Vec<Vec<(usize, usize)>> {
     let mut res = vec![];
 
-    for i in 0..vi_subset_instruction.len() {
-        let subset = &vi_subset_instruction[i];
+    for subset in vi_subset_instruction {
         let mut layer_res = vec![];
-        for j in 0..subset.len() {
-            layer_res.push((j, vi_subset_instruction[i][j]));
+        for (j, _) in subset.iter().enumerate() {
+            layer_res.push((j, subset[j]));
         }
         res.push(layer_res);
     }
@@ -180,8 +183,6 @@ mod tests {
         let total_gates_in_layer = 2;
 
         let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
-
-        let layer_evaluation = &layer_evaluations[layer_index];
 
         let proving_info_with_subsets = layer_proving_info.extract_subsets(&layer_evaluations);
 

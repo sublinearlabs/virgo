@@ -51,7 +51,16 @@ fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
     .collect();
 
     // build the vpoly
-    let mut poly = VPoly::new(mles, 2, Rc::new(|evals: &[Fields<F, E>]| evals[0]));
+    let mut poly = VPoly::new(
+        mles,
+        2,
+        Rc::new(|evals: &[Fields<F, E>]| {
+            // w(b) * add_b(..) + add_c(..) + w(b) * mul(..)
+            // w(b) * (add_b(..) + mul(..)) + add_c(..)
+            let [add_b, add_c, mul, wb] = [evals[0], evals[1], evals[2], evals[3]];
+            (wb * (add_b + mul)) + add_c
+        }),
+    );
 
     SumCheck::prove_partial(claimed_sum, &mut poly, transcript).unwrap()
 }

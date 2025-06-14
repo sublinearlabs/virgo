@@ -1,5 +1,5 @@
 use p3_field::{ExtensionField, Field};
-use poly::Fields;
+use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
 use sum_check::primitives::SumCheckProof;
 
 use crate::util::LayerProvingInfoWithSubset;
@@ -27,6 +27,38 @@ fn prove_phase_one<F: Field, E: ExtensionField<F>>(
     // build_product_bookkeping_table()
 
     // build the I(g, z) table first
+    let igz = generate_eq::<F, E>();
+
+    // TODO: document this section
+    let add_b_ahg = build_bookkeeping_table_with_identity(
+        &igz,
+        &layer_proving_info.add_subsets,
+        layer_proving_info.v_subsets[0].len(),
+    );
+
+    // TODO: document this section
+    let add_c_ahg = build_bookkeeping_table(
+        &igz,
+        &layer_proving_info.add_subsets,
+        &layer_proving_info.v_subsets,
+    );
+
+    // TODO: document this section
+    let mul_ahg = build_bookkeeping_table(
+        &igz,
+        &layer_proving_info.mul_subsets,
+        &layer_proving_info.v_subsets,
+    );
+
+    // build the v poly
+    // can add a new to next power of two method to sl-core
+    // that pads them
+
+    todo!()
+}
+
+// TODO: make use of the libra implementation
+fn generate_eq<F: Field, E: ExtensionField<F>>() -> Vec<Fields<F, E>> {
     todo!()
 }
 
@@ -34,7 +66,7 @@ fn prove_phase_one<F: Field, E: ExtensionField<F>>(
 fn build_bookkeeping_table<F: Field, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     sparse_entries: &[Vec<[usize; 3]>],
-    subsets: Vec<Vec<Fields<F, E>>>,
+    subsets: &[Vec<Fields<F, E>>],
 ) -> Vec<Fields<F, E>> {
     // ensure there is one sparse entry for each subset
     debug_assert_eq!(sparse_entries.len(), subsets.len());

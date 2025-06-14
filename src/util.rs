@@ -184,8 +184,6 @@ mod tests {
 
         let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
 
-        let layer_evaluation = &layer_evaluations[layer_index];
-
         let proving_info_with_subsets = layer_proving_info.extract_subsets(&layer_evaluations);
 
         let igz = generate_eq(

@@ -507,6 +507,7 @@ dependencies = [
  "libra",
  "p3-field",
  "p3-goldilocks",
+ "sum_check",
 ]
 
 [[package]]

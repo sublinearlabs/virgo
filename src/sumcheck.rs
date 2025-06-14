@@ -1,3 +1,4 @@
+use libra::utils::generate_eq;
 use p3_field::{ExtensionField, Field};
 use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
 use sum_check::primitives::SumCheckProof;
@@ -13,6 +14,7 @@ use crate::util::LayerProvingInfoWithSubset;
 
 // TODO: add proper documentation
 fn prove_phase_one<F: Field, E: ExtensionField<F>>(
+    output_point: &[Fields<F, E>],
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
 ) -> SumCheckProof<F, E> {
     // what is required to prove phase one
@@ -27,7 +29,8 @@ fn prove_phase_one<F: Field, E: ExtensionField<F>>(
     // build_product_bookkeping_table()
 
     // build the I(g, z) table first
-    let igz = generate_eq::<F, E>();
+    //let igz = generate_eq::<F, E>();
+    let igz = generate_eq(output_point);
 
     // TODO: document this section
     let add_b_ahg = build_bookkeeping_table_with_identity(
@@ -53,12 +56,13 @@ fn prove_phase_one<F: Field, E: ExtensionField<F>>(
     // build the v poly
     // can add a new to next power of two method to sl-core
     // that pads them
+    //let poly = VPoly::new(
+    //    mles,
+    //    2,
+    //    mles[0]
+    //    combine_fn,
+    //);
 
-    todo!()
-}
-
-// TODO: make use of the libra implementation
-fn generate_eq<F: Field, E: ExtensionField<F>>() -> Vec<Fields<F, E>> {
     todo!()
 }
 

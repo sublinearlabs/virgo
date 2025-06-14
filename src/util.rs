@@ -147,6 +147,35 @@ pub(crate) fn build_cki(vi_subset_instruction: &Vec<Vec<usize>>) -> Vec<Vec<(usi
     res
 }
 
+struct Subclaim<F: Field, E: ExtensionField<F>> {
+    r: Vec<Fields<F, E>>,
+    eval: Fields<F, E>,
+    instruction: Vec<(usize, usize)>,
+}
+
+pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
+    alphas: Vec<E>,
+    subclaims: Vec<Subclaim<F, E>>,
+    rb_alpha: E,
+    rb_subclaim: Subclaim<F, E>,
+) {
+    let mut res = vec![E::zero()];
+
+    for k in 0..subclaims.len() {
+        let subclaim = subclaims[k];
+        let igz = generate_eq(&subclaim.r);
+
+        for (t, x) in subclaim.instruction {
+            res[x] += alphas[k] * igz[t];
+        }
+    }
+
+    let rb_igz = generate_eq(&rb_subclaim.r);
+    for (t, x) in rb_subclaim.instruction {
+        res[x] += rb_alpha * rb_igz[t];
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use libra::utils::generate_eq;

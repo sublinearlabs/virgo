@@ -14,6 +14,31 @@ use crate::util::LayerProvingInfoWithSubset;
 fn prove_phase_one<F: Field, E: ExtensionField<F>>(
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
 ) -> SumCheckProof<F, E> {
+    // what is required to prove phase one
+    // we need to generate three bookkeeping tables
+    // use the vpoly to construct a single combination poly
+    // run partial sumcheck on that and return the proof
+
+    // what inputs do we need to build a bookkeeping table?
+    // for libra we just need the I(g, z), f[z, b, c] and v(c)
+    // for virgo we have different f_i[z, b, c] and v_(c) pairs
+    // what should one call this subroutine?
+    // build_product_bookkeping_table()
+
+    // build the I(g, z) table first
+    todo!()
+}
+
+fn build_product_bookkeeping_table<F: Field, E: ExtensionField<F>>(
+    sparse_entries: &[Vec<[usize; 3]>],
+    subsets: Vec<Vec<Fields<F, E>>>,
+) -> Vec<Fields<F, E>> {
+    // we need something in the size of x, how do we know the size of x?
+    // is that the same as the size of the first subset??
+
+    // the size of the table is based on the size of the first subset vector
+    // as the first subset vector is also the common vector for all layers
+    let mut table: Vec<Fields<F, E>> = vec![Fields::Base(F::zero()); subsets[0].len()];
     todo!()
 }
 

@@ -2,16 +2,16 @@ use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::utils::generate_eq;
-use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
+use poly::{Fields, mle::MultilinearPoly, vpoly::VPoly};
+use sum_check::SumCheck;
 use sum_check::interface::SumCheckInterface;
 use sum_check::primitives::SumCheckProof;
-use sum_check::SumCheck;
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
 
 // TODO: add proper documentation
-fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
+pub(crate) fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
     claimed_sum: Fields<F, E>,
     output_point: &[Fields<F, E>],
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,

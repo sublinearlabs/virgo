@@ -39,6 +39,7 @@ impl GeneralCircuit {
     }
 
     /// Return circuit information needed to run virgo sumcheck
+    #[allow(dead_code)]
     pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
         // given some global layer id after the target id
         // converts that to the relative id from the target id
@@ -178,10 +179,9 @@ impl Gate {
     }
 
     /// Applies the gate function to the given inputs
-    pub fn eval<F: Copy>(&self, left_input: &F, right_input: &F) -> F
+    pub fn eval<F>(&self, left_input: &F, right_input: &F) -> F
     where
-        F: std::ops::Add<F, Output = F>,
-        F: std::ops::Mul<F, Output = F>,
+        F: std::ops::Add<F, Output = F> + std::ops::Mul<F, Output = F> + Copy,
     {
         match self.op {
             GateOp::Add => *left_input + *right_input,

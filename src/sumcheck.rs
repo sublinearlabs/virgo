@@ -1,4 +1,5 @@
 use p3_field::{ExtensionField, Field};
+use poly::Fields;
 use sum_check::primitives::SumCheckProof;
 
 use crate::util::LayerProvingInfoWithSubset;
@@ -7,6 +8,14 @@ use crate::util::LayerProvingInfoWithSubset;
 // the goal is to prove the sumcheck relation for a Layer
 // the layer proving info with subset should contain all information needed to do this
 // hence I should be able to write a function that takes just that and returns a sumcheck proof
+//
+// now I need a function that represents phase 1
+
+fn prove_phase_one<F: Field, E: ExtensionField<F>>(
+    layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
+) -> SumCheckProof<F, E> {
+    todo!()
+}
 
 /// Utility function to merge two sumcheck proofs
 /// used to merge the phase 1 and phase 2 sumcheck proofs

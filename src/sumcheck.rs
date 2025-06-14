@@ -31,7 +31,7 @@ fn prove_phase_one<F: Field, E: ExtensionField<F>>(
 }
 
 // TODO: add proper documentation
-fn build_product_bookkeeping_table<F: Field, E: ExtensionField<F>>(
+fn build_bookkeeping_table<F: Field, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     sparse_entries: &[Vec<[usize; 3]>],
     subsets: Vec<Vec<Fields<F, E>>>,
@@ -54,6 +54,21 @@ fn build_product_bookkeeping_table<F: Field, E: ExtensionField<F>>(
         }
     }
 
+    table
+}
+
+// TODO: add documentation
+fn build_bookkeeping_table_with_identity<F: Field, E: ExtensionField<F>>(
+    igz: &[Fields<F, E>],
+    sparse_entries: &[Vec<[usize; 3]>],
+    table_len: usize,
+) -> Vec<Fields<F, E>> {
+    let mut table = vec![Fields::Base(F::zero()); table_len];
+    for sparse_entry in sparse_entries {
+        for [z, x, _] in sparse_entry {
+            table[*x] += igz[*z]
+        }
+    }
     table
 }
 

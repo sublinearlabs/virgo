@@ -2,20 +2,13 @@ use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::utils::generate_eq;
-use poly::{Fields, mle::MultilinearPoly, vpoly::VPoly};
-use sum_check::SumCheck;
+use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
 use sum_check::interface::SumCheckInterface;
 use sum_check::primitives::SumCheckProof;
+use sum_check::SumCheck;
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
-
-// what are  the basic steps I need?
-// the goal is to prove the sumcheck relation for a Layer
-// the layer proving info with subset should contain all information needed to do this
-// hence I should be able to write a function that takes just that and returns a sumcheck proof
-//
-// now I need a function that represents phase 1
 
 // TODO: add proper documentation
 fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
@@ -24,19 +17,6 @@ fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
-    // what is required to prove phase one
-    // we need to generate three bookkeeping tables
-    // use the vpoly to construct a single combination poly
-    // run partial sumcheck on that and return the proof
-
-    // what inputs do we need to build a bookkeeping table?
-    // for libra we just need the I(g, z), f[z, b, c] and v(c)
-    // for virgo we have different f_i[z, b, c] and v_(c) pairs
-    // what should one call this subroutine?
-    // build_product_bookkeping_table()
-
-    // build the I(g, z) table first
-    //let igz = generate_eq::<F, E>();
     let igz = generate_eq(output_point);
 
     // TODO: document this section
@@ -84,9 +64,6 @@ fn build_bookkeeping_table<F: Field, E: ExtensionField<F>>(
 ) -> Vec<Fields<F, E>> {
     // ensure there is one sparse entry for each subset
     debug_assert_eq!(sparse_entries.len(), subsets.len());
-
-    // we need something in the size of x, how do we know the size of x?
-    // is that the same as the size of the first subset??
 
     // the size of the table is based on the size of the first subset vector
     // as the first subset vector is also the common vector for all layers

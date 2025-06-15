@@ -112,6 +112,8 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
 
     // perform sumcheck
     // might be a repitition of the main sumcheck loop
+    // what does this look like?
+    // first I need something that can merge round polynomials
 
     todo!()
 }
@@ -168,4 +170,48 @@ fn build_bookkeeping_tables_with_identity<F: Field, E: ExtensionField<F>>(
     }
 
     tables
+}
+
+fn merge_round_messages<F: Field, E: ExtensionField<F>>(
+    round_messages: &[Vec<Fields<F, E>>],
+) -> Vec<Fields<F, E>> {
+    let mut result = round_messages[0].clone();
+    for round_message in round_messages.iter().skip(1) {
+        // who is responsible for the length of the round messages??
+        // the code not the use
+        debug_assert_eq!(result.len(), round_message.len());
+        for i in 0..result.len() {
+            result[i] += round_message[i];
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use p3_field::{extension::BinomialExtensionField, ExtensionField, Field};
+    use p3_goldilocks::Goldilocks as F;
+    use poly::Fields;
+
+    use crate::sumcheck::phase_two::merge_round_messages;
+    type E = BinomialExtensionField<F, 2>;
+
+    fn to_fields<F: Field, E: ExtensionField<F>>(values: Vec<usize>) -> Vec<Fields<F, E>> {
+        values
+            .into_iter()
+            .map(|v| Fields::Base(F::from_canonical_usize(v)))
+            .collect::<Vec<_>>()
+    }
+    #[test]
+    fn test_merge_round_messages() {
+        let round_messages = [
+            to_fields::<F, E>(vec![1, 2]),
+            to_fields(vec![3, 4]),
+            to_fields(vec![3, 5]),
+        ];
+        assert_eq!(
+            merge_round_messages(&round_messages),
+            to_fields(vec![7, 11])
+        );
+    }
 }

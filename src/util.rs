@@ -1,6 +1,12 @@
 // use libra::utils::{build_phase_one_libra_sumcheck_poly, generate_eq, initialize_phase_one};
 use p3_field::{ExtensionField, Field};
-use poly::{Fields, utils::generate_eq};
+use poly::{
+    Fields, MultilinearExtension,
+    mle::MultilinearPoly,
+    utils::{generate_eq, product_poly},
+    vpoly::VPoly,
+};
+use sum_check::interface::SumCheckInterface;
 
 /// Type alias for layer id
 pub type LayerId = usize;
@@ -135,6 +141,7 @@ pub fn phase_one<F: Field, E: ExtensionField<F>>(
     res
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     r: Vec<Fields<F, E>>,
@@ -142,6 +149,7 @@ pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     instruction: Vec<(usize, usize)>,
 }
 
+#[allow(dead_code)]
 pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
     alphas: &[Fields<F, E>],
     subclaims: &[Subclaim<F, E>],
@@ -159,6 +167,28 @@ pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
     }
 
     res
+}
+
+#[allow(dead_code)]
+pub fn n_to_1_folding<F, E, S>(
+    transcript: &mut S::Transcript,
+    alphas: &[Fields<F, E>],
+    subclaims: &[Subclaim<F, E>],
+    vi: &[Fields<F, E>],
+) -> Result<S::Proof, anyhow::Error>
+where
+    F: Field,
+    E: ExtensionField<F>,
+    S: SumCheckInterface<F, E, Polynomial = VPoly<F, E>>,
+{
+    let agi = build_agi(alphas, subclaims, vi.len());
+    let agi_extension =
+        MultilinearPoly::new_extend_to_power_of_two(agi, Fields::Extension(E::zero()));
+    let vi_poly =
+        MultilinearPoly::new_extend_to_power_of_two(vi.to_vec(), Fields::Extension(E::zero()));
+    let mut poly = product_poly::<F, E>(vec![vi_poly, agi_extension]);
+    let claimed_sum = poly.sum_over_hypercube();
+    S::prove_partial(claimed_sum, &mut poly, transcript)
 }
 
 #[cfg(test)]

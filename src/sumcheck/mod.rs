@@ -4,7 +4,7 @@ mod phase_two;
 use p3_field::{ExtensionField, Field, PrimeField32};
 use phase_one::prove_phase_one;
 use phase_two::prove_phase_two;
-use poly::{Fields, utils::generate_eq};
+use poly::{utils::generate_eq, Fields};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -40,5 +40,20 @@ fn merge_sumcheck_proofs<F: Field, E: ExtensionField<F>>(
         claimed_sum: proof1.claimed_sum,
         round_polynomials: [proof1.round_polynomials, proof2.round_polynomials].concat(),
         challenges: [proof1.challenges, proof2.challenges].concat(),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_prove_and_verify_sumcheck_layer() {
+        // what is my testing plan
+        // 1. need a circuit
+        // 2. evaluate that circuit on some given input
+        // 3. convert the evaluation entry that I am interested in to a multilinear poly
+        // 4. evaluate that at some random point to get a claim
+        // 5. generate the layer proving info and transcript
+        // 6. pass that to the sumcheck prover
+        // 7. partially verify the sumcheck proof (make sure all is well)
     }
 }

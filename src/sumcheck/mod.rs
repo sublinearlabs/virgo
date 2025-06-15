@@ -49,6 +49,7 @@ mod test {
     use p3_field::{extension::BinomialExtensionField, AbstractField, ExtensionField, Field};
     use p3_mersenne_31::Mersenne31 as F;
     use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
     type E = BinomialExtensionField<F, 3>;
 
@@ -88,11 +89,22 @@ mod test {
 
         let mut prover_transcript = Transcript::<F, E>::init();
 
-        prove_sumcheck_layer(
+        let sumcheck_proof = prove_sumcheck_layer(
             claimed_sum,
             &output_point,
             &output_layer_proving_info,
             &mut prover_transcript,
         );
+
+        let mut verifier_transcript = Transcript::<F, E>::init();
+
+        let verification_result = SumCheck::<F, E, MultilinearPoly<F, E>>::verify_partial(
+            &sumcheck_proof,
+            &mut verifier_transcript,
+        );
+
+        // TODO: perform the oracle check
+
+        dbg!(verification_result);
     }
 }

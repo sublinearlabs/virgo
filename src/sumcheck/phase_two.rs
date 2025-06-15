@@ -2,12 +2,12 @@ use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{
+    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
-    Fields, MultilinearExtension,
 };
-use sum_check::primitives::SumCheckProof;
+use sum_check::{padded_sumcheck::PaddedSumcheck, primitives::SumCheckProof};
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
@@ -113,7 +113,22 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
             ])
         });
 
-    let vpolys = iter_1.chain(iter_2).chain(iter_3).collect::<Vec<_>>();
+    let vpolys = iter_1.chain(iter_2).chain(iter_3);
+
+    // determine the highest number of variables
+    let max_var = vpolys.clone().map(|p| p.num_vars()).max().unwrap();
+
+    // prepare for padded sumcheck
+    let padded_polys = vpolys
+        .into_iter()
+        .map(|vp| {
+            let pad_count = max_var - vp.num_vars();
+            PaddedSumcheck::new(vp, pad_count)
+        })
+        .collect::<Vec<_>>();
+
+    // perform sumcheck
+    // might be a repitition of the main sumcheck loop
 
     todo!()
 }
@@ -140,7 +155,7 @@ fn build_bookkeeping_tables<F: Field, E: ExtensionField<F>>(
     // what do we iterate over??
     // has to be sparse entries
     for (sparse_entry, table_len) in sparse_entries.iter().zip(table_lens) {
-        let mut table = vec![Fields::Base(F::zero()); table_len];
+        let mut table = vec![Fields::Base(F::zero()); *table_len];
         for [z, x, y] in sparse_entry {
             table[*y] += igz[*z] * iux[*x] * *constant;
         }
@@ -162,7 +177,7 @@ fn build_bookkeeping_tables_with_identity<F: Field, E: ExtensionField<F>>(
     // what do we iterate over??
     // has to be sparse entries
     for (sparse_entry, table_len) in sparse_entries.iter().zip(table_lens) {
-        let mut table = vec![Fields::Base(F::zero()); table_len];
+        let mut table = vec![Fields::Base(F::zero()); *table_len];
         for [z, x, y] in sparse_entry {
             table[*y] += igz[*z] * iux[*x];
         }

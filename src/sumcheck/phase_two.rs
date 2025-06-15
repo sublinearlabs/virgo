@@ -2,32 +2,15 @@ use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{
-    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
+    Fields, MultilinearExtension,
 };
 use sum_check::{padded_sumcheck::PaddedSumcheck, primitives::SumCheckProof};
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
-
-// how do we handle phase 2??
-// we need the first set of challenges
-// then we evaluate the first subset at that challenge point
-// this will give us our scalar
-// what are we left with after evaluating at the challenge points?
-// w(b) was factor so that turns to a scalar
-// we had three groups
-// w(b) * add_b + w(b) * mul_b * w(c) + add_c * w(c)
-// basically we have a series of polynomials some singular some product
-// all summed and they might have different number of variables
-// I think I need to build the product poly's and the singular multiplinear polys
-// then find the max number of variables
-// and then convert each one to a padded polynomial
-// run sumcheck stepwise on them
-// I might want everything to be a v poly because of the max var degree issue
-// we want all the round poly's to be of the same size so we can do the element wise summation
 
 // TODO: create hackmd describing the phase two analysis
 pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(

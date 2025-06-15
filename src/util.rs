@@ -1,8 +1,6 @@
-use libra::utils::{build_phase_one_libra_sumcheck_poly, generate_eq, initialize_phase_one};
-use p3_field::{AbstractExtensionField, ExtensionField, Field};
-use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
-
-use crate::circuit::{GateOp, GeneralCircuit, Layer};
+// use libra::utils::{build_phase_one_libra_sumcheck_poly, generate_eq, initialize_phase_one};
+use p3_field::{ExtensionField, Field};
+use poly::{Fields, utils::generate_eq};
 
 /// Type alias for layer id
 pub type LayerId = usize;
@@ -27,10 +25,10 @@ pub(crate) struct LayerProvingInfo {
 
 impl LayerProvingInfo {
     #[allow(dead_code)]
-    pub(crate) fn extract_subsets<F: Clone>(
+    pub(crate) fn extract_subsets<F: Field, E: ExtensionField<F>>(
         self,
         evaluations: &[Vec<F>],
-    ) -> LayerProvingInfoWithSubset<F> {
+    ) -> LayerProvingInfoWithSubset<F, E> {
         let subset_evaluations = &evaluations[(self.layer_id + 1)..];
         let concrete_subset_values = self
             .v_subset_instruction
@@ -38,10 +36,10 @@ impl LayerProvingInfo {
             .zip(subset_evaluations)
             .map(|(inst, data)| {
                 inst.iter()
-                    .map(|index| data[*index].clone())
-                    .collect::<Vec<F>>()
+                    .map(|index| Fields::Base(data[*index]))
+                    .collect::<Vec<Fields<F, E>>>()
             })
-            .collect::<Vec<Vec<F>>>();
+            .collect::<Vec<Vec<Fields<F, E>>>>();
 
         LayerProvingInfoWithSubset {
             v_subsets: concrete_subset_values,
@@ -54,9 +52,9 @@ impl LayerProvingInfo {
 /// Represents components needed to perform sumcheck for the `GeneralCircuit`
 /// with concrete subset values
 #[derive(Debug, Clone)]
-pub(crate) struct LayerProvingInfoWithSubset<F> {
+pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     /// Subset values v for some given layer id
-    pub(crate) v_subsets: Vec<Vec<F>>,
+    pub(crate) v_subsets: Vec<Vec<Fields<F, E>>>,
     /// Subset add i's based on subset v's
     pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,
     /// Subset mul i's based on subset v's
@@ -67,10 +65,10 @@ pub(crate) struct LayerProvingInfoWithSubset<F> {
 pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
     layer_index: usize,
     circuit_depth: usize,
-    igz: &[E],
-    layer_proving_info: &LayerProvingInfoWithSubset<F>,
+    igz: &[Fields<F, E>],
+    layer_proving_info: &LayerProvingInfoWithSubset<F, E>,
     total_gates_in_layer: usize,
-) -> (Vec<E>, Vec<E>, Vec<E>) {
+) -> (Vec<Fields<F, E>>, Vec<Fields<F, E>>, Vec<Fields<F, E>>) {
     let depth_from_layer = circuit_depth - layer_index - 1;
 
     // Get identity polyynomial for each subset
@@ -78,7 +76,7 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
 
     for layer_index in 0..depth_from_layer {
         identity.push(vec![
-            F::one();
+            Fields::Extension(E::one());
             layer_proving_info.v_subsets[layer_index].len()
         ]);
     }
@@ -112,15 +110,15 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
 
 #[allow(dead_code)]
 pub fn phase_one<F: Field, E: ExtensionField<F>>(
-    igz: &[E],
+    igz: &[Fields<F, E>],
     f1: &[Vec<[usize; 3]>],
-    vi_subset: &[Vec<F>],
+    vi_subset: &[Vec<Fields<F, E>>],
     depth_from_layer: usize,
     total_gates_in_layer: usize,
-) -> Vec<E> {
+) -> Vec<Fields<F, E>> {
     // The total number of inputs to a layer cant be more than (2 * total gates in layer)
     // since the circuit is fan in 2
-    let mut res = vec![E::zero(); 2 * total_gates_in_layer];
+    let mut res = vec![Fields::Extension(E::zero()); 2 * total_gates_in_layer];
 
     assert_eq!(f1.len(), depth_from_layer);
     assert_eq!(vi_subset.len(), depth_from_layer);
@@ -150,44 +148,51 @@ pub(crate) fn build_cki(vi_subset_instruction: &Vec<Vec<usize>>) -> Vec<Vec<(usi
     res
 }
 
-struct Subclaim<F: Field, E: ExtensionField<F>> {
+#[derive(Debug, Clone)]
+pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     r: Vec<Fields<F, E>>,
     eval: Fields<F, E>,
     instruction: Vec<(usize, usize)>,
 }
 
 pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
-    alphas: Vec<E>,
-    subclaims: Vec<Subclaim<F, E>>,
-    rb_alpha: E,
-    rb_subclaim: Subclaim<F, E>,
-) {
-    let mut res = vec![E::zero()];
+    alphas: &[Fields<F, E>],
+    subclaims: &[Subclaim<F, E>],
+    table_length: usize,
+) -> Vec<Fields<F, E>> {
+    let mut res = vec![Fields::Extension(E::zero()); table_length];
 
     for k in 0..subclaims.len() {
-        let subclaim = subclaims[k];
+        let subclaim = &subclaims[k];
         let igz = generate_eq(&subclaim.r);
 
-        for (t, x) in subclaim.instruction {
-            res[x] += alphas[k] * igz[t];
+        for (t, x) in &subclaim.instruction {
+            res[*x] += alphas[k] * igz[*t];
         }
     }
 
-    let rb_igz = generate_eq(&rb_subclaim.r);
-    for (t, x) in rb_subclaim.instruction {
-        res[x] += rb_alpha * rb_igz[t];
-    }
+    res
 }
 
 #[cfg(test)]
 mod tests {
-    use libra::utils::generate_eq;
-    use p3_field::AbstractField;
+    use std::vec;
+
+    use p3_field::{AbstractField, extension::BinomialExtensionField};
     use p3_goldilocks::Goldilocks;
+    use poly::{
+        Fields, MultilinearExtension,
+        mle::MultilinearPoly,
+        utils::{generate_eq, product_poly},
+        vpoly::VPoly,
+    };
+
+    type F = Goldilocks;
+    type E = BinomialExtensionField<F, 2>;
 
     use crate::{
         circuit::test::circuit_1,
-        util::{build_cki, build_virgo_ahg},
+        util::{Subclaim, build_agi, build_cki, build_virgo_ahg},
     };
 
     #[test]
@@ -219,12 +224,7 @@ mod tests {
 
         let proving_info_with_subsets = layer_proving_info.extract_subsets(&layer_evaluations);
 
-        let igz = generate_eq(
-            &[3_usize]
-                .iter()
-                .map(|val| Goldilocks::from_canonical_usize(*val))
-                .collect::<Vec<Goldilocks>>(),
-        );
+        let igz = generate_eq::<F, E>(&[Fields::Extension(E::from_canonical_usize(3))]);
 
         let virgo_ahg = build_virgo_ahg(
             layer_index,
@@ -251,5 +251,73 @@ mod tests {
         assert_eq!(cki[0], vec![(0, 0), (1, 1)]);
         assert_eq!(cki[1], vec![(0, 3)]);
         assert_eq!(cki[2], vec![(0, 2)]);
+    }
+
+    #[test]
+    fn test_build_agi() {
+        let main_poly_eval = Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6]);
+
+        let main_poly = MultilinearPoly::new_extend_to_power_of_two(
+            main_poly_eval.clone(),
+            Fields::from_u32(0),
+        );
+
+        let alphas = Fields::<F, E>::from_u32_vec(vec![2, 3, 5]);
+
+        let all_challenges = Fields::<F, E>::from_u32_vec(vec![3, 4, 5, 2, 3, 4]);
+
+        let c1_subset_poly = MultilinearPoly::new_extend_to_power_of_two(
+            Fields::from_u32_vec(vec![1, 3, 5]),
+            Fields::from_u32(0),
+        );
+        let c1_subset_instruction = vec![(0, 0), (1, 2), (2, 4)];
+        let c1_r = &all_challenges[..c1_subset_poly.num_vars()];
+        let c1_eval = c1_subset_poly.evaluate(&c1_r);
+        let c1_subclaim = Subclaim {
+            r: c1_r.to_vec(),
+            eval: c1_eval,
+            instruction: c1_subset_instruction,
+        };
+
+        let c2_subset_poly = MultilinearPoly::new_extend_to_power_of_two(
+            Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6]),
+            Fields::from_u32(0),
+        );
+        let c2_subset_instruction = vec![(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)];
+        let c2_r = &all_challenges[..c2_subset_poly.num_vars()];
+        let c2_eval = c2_subset_poly.evaluate(&c2_r);
+        let c2_subclaim = Subclaim {
+            r: c2_r.to_vec(),
+            eval: c2_eval,
+            instruction: c2_subset_instruction,
+        };
+
+        let c3_subset_poly = MultilinearPoly::new_extend_to_power_of_two(
+            Fields::from_u32_vec(vec![2, 3, 6]),
+            Fields::from_u32(0),
+        );
+        let c3_subset_instruction = vec![(0, 1), (1, 2), (2, 5)];
+        let c3_r = &all_challenges[..c3_subset_poly.num_vars()];
+        let c3_eval = c3_subset_poly.evaluate(&c3_r);
+        let c3_subclaim = Subclaim {
+            r: c3_r.to_vec(),
+            eval: c3_eval,
+            instruction: c3_subset_instruction,
+        };
+
+        let subclaims = vec![c1_subclaim, c2_subclaim, c3_subclaim];
+
+        let agi = build_agi(&alphas, &subclaims, main_poly_eval.len());
+
+        let agi_poly =
+            MultilinearPoly::new_extend_to_power_of_two(agi, Fields::Extension(E::zero()));
+
+        let res = product_poly(vec![agi_poly, main_poly]).sum_over_hypercube();
+
+        let expected = (alphas[0] * subclaims[0].eval)
+            + (alphas[1] * subclaims[1].eval)
+            + (alphas[2] * subclaims[2].eval);
+
+        assert_eq!(res, expected);
     }
 }

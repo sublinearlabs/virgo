@@ -61,6 +61,8 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
 }
 
+type Ahg<F, E> = (Vec<Fields<F, E>>, Vec<Fields<F, E>>, Vec<Fields<F, E>>);
+
 #[allow(dead_code)]
 pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
     layer_index: usize,
@@ -68,7 +70,7 @@ pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     layer_proving_info: &LayerProvingInfoWithSubset<F, E>,
     total_gates_in_layer: usize,
-) -> (Vec<Fields<F, E>>, Vec<Fields<F, E>>, Vec<Fields<F, E>>) {
+) -> Ahg<F, E> {
     let depth_from_layer = circuit_depth - layer_index - 1;
 
     // Get identity polyynomial for each subset
@@ -133,21 +135,6 @@ pub fn phase_one<F: Field, E: ExtensionField<F>>(
     res
 }
 
-#[allow(dead_code)]
-pub(crate) fn build_cki(vi_subset_instruction: &Vec<Vec<usize>>) -> Vec<Vec<(usize, usize)>> {
-    let mut res = vec![];
-
-    for subset in vi_subset_instruction {
-        let mut layer_res = vec![];
-        for (j, _) in subset.iter().enumerate() {
-            layer_res.push((j, subset[j]));
-        }
-        res.push(layer_res);
-    }
-
-    res
-}
-
 #[derive(Debug, Clone)]
 pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     r: Vec<Fields<F, E>>,
@@ -184,7 +171,6 @@ mod tests {
         Fields, MultilinearExtension,
         mle::MultilinearPoly,
         utils::{generate_eq, product_poly},
-        vpoly::VPoly,
     };
 
     type F = Goldilocks;
@@ -192,7 +178,7 @@ mod tests {
 
     use crate::{
         circuit::test::circuit_1,
-        util::{Subclaim, build_agi, build_cki, build_virgo_ahg},
+        util::{Subclaim, build_agi, build_virgo_ahg},
     };
 
     #[test]
@@ -238,22 +224,6 @@ mod tests {
     }
 
     #[test]
-    fn test_build_cki() {
-        // Build circuit
-        let circuit = circuit_1();
-
-        let layer_index = 0;
-
-        let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
-
-        let cki = &build_cki(&layer_proving_info.v_subset_instruction);
-
-        assert_eq!(cki[0], vec![(0, 0), (1, 1)]);
-        assert_eq!(cki[1], vec![(0, 3)]);
-        assert_eq!(cki[2], vec![(0, 2)]);
-    }
-
-    #[test]
     fn test_build_agi() {
         let main_poly_eval = Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6]);
 
@@ -272,7 +242,7 @@ mod tests {
         );
         let c1_subset_instruction = vec![(0, 0), (1, 2), (2, 4)];
         let c1_r = &all_challenges[..c1_subset_poly.num_vars()];
-        let c1_eval = c1_subset_poly.evaluate(&c1_r);
+        let c1_eval = c1_subset_poly.evaluate(c1_r);
         let c1_subclaim = Subclaim {
             r: c1_r.to_vec(),
             eval: c1_eval,
@@ -285,7 +255,7 @@ mod tests {
         );
         let c2_subset_instruction = vec![(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)];
         let c2_r = &all_challenges[..c2_subset_poly.num_vars()];
-        let c2_eval = c2_subset_poly.evaluate(&c2_r);
+        let c2_eval = c2_subset_poly.evaluate(c2_r);
         let c2_subclaim = Subclaim {
             r: c2_r.to_vec(),
             eval: c2_eval,
@@ -298,7 +268,7 @@ mod tests {
         );
         let c3_subset_instruction = vec![(0, 1), (1, 2), (2, 5)];
         let c3_r = &all_challenges[..c3_subset_poly.num_vars()];
-        let c3_eval = c3_subset_poly.evaluate(&c3_r);
+        let c3_eval = c3_subset_poly.evaluate(c3_r);
         let c3_subclaim = Subclaim {
             r: c3_r.to_vec(),
             eval: c3_eval,

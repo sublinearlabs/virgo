@@ -1,5 +1,12 @@
+use std::rc::Rc;
+
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{mle::MultilinearPoly, utils::generate_eq, Fields, MultilinearExtension};
+use poly::{
+    mle::MultilinearPoly,
+    utils::{generate_eq, product_poly},
+    vpoly::VPoly,
+    Fields, MultilinearExtension,
+};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -68,6 +75,46 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
         &constant,
         &subset_lens,
     );
+
+    let iter_1 = add_tables_with_constant.into_iter().map(|p| {
+        VPoly::new(
+            vec![MultilinearPoly::new_extend_to_power_of_two(
+                p,
+                Fields::Base(F::zero()),
+            )],
+            2,
+            Rc::new(|evals: &[Fields<F, E>]| evals[0]),
+        )
+    });
+
+    let iter_2 = add_tables_with_identity
+        .into_iter()
+        .zip(&layer_proving_info.v_subsets)
+        .map(|(p, subset)| {
+            product_poly(vec![
+                MultilinearPoly::new_extend_to_power_of_two(p, Fields::Base(F::zero())),
+                MultilinearPoly::new_extend_to_power_of_two(
+                    subset.to_vec(),
+                    Fields::Base(F::zero()),
+                ),
+            ])
+        });
+
+    let iter_3 = mul_tables
+        .into_iter()
+        .zip(&layer_proving_info.v_subsets)
+        .map(|(p, subset)| {
+            product_poly(vec![
+                MultilinearPoly::new_extend_to_power_of_two(p, Fields::Base(F::zero())),
+                MultilinearPoly::new_extend_to_power_of_two(
+                    subset.to_vec(),
+                    Fields::Base(F::zero()),
+                ),
+            ])
+        });
+
+    let vpolys = iter_1.chain(iter_2).chain(iter_3).collect::<Vec<_>>();
+
     todo!()
 }
 

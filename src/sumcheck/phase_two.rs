@@ -7,7 +7,11 @@ use poly::{
     vpoly::VPoly,
     Fields, MultilinearExtension,
 };
-use sum_check::{padded_sumcheck::PaddedSumcheck, primitives::SumCheckProof};
+use sum_check::{
+    padded_sumcheck::{self, PaddedSumcheck},
+    primitives::SumCheckProof,
+    sumcheckable::Sumcheckable,
+};
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
@@ -102,7 +106,7 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
     let max_var = vpolys.clone().map(|p| p.num_vars()).max().unwrap();
 
     // prepare for padded sumcheck
-    let padded_polys = vpolys
+    let mut padded_polys = vpolys
         .into_iter()
         .map(|vp| {
             let pad_count = max_var - vp.num_vars();
@@ -114,8 +118,39 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
     // might be a repitition of the main sumcheck loop
     // what does this look like?
     // first I need something that can merge round polynomials
+    // okay that is done now, what next?
+    // need to accumulate challenges and round polynomials
 
-    todo!()
+    let mut round_messages = vec![];
+    let mut challenges = vec![];
+
+    for _ in 0..max_var {
+        // combine the round messages for all the padded polynomials
+        let round_message = merge_round_messages(
+            &padded_polys
+                .iter()
+                .map(|p| p.round_message())
+                .collect::<Vec<_>>(),
+        );
+        transcript.observe_ext_element(
+            &round_message
+                .iter()
+                .map(|val| val.to_extension_field())
+                .collect::<Vec<E>>(),
+        );
+        let challenge = Fields::Extension(transcript.sample_challenge());
+        for poly in &mut padded_polys {
+            poly.receive_challenge(&challenge);
+        }
+        round_messages.push(round_message);
+        challenges.push(challenge);
+    }
+
+    SumCheckProof {
+        claimed_sum: Fields::Base(F::zero()),
+        round_polynomials: round_messages,
+        challenges,
+    }
 }
 
 // what does this require?

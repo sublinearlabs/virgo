@@ -1,5 +1,5 @@
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{utils::generate_eq, Fields};
+use poly::{mle::MultilinearPoly, utils::generate_eq, Fields, MultilinearExtension};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -39,7 +39,35 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
         .map(|vi| vi.len())
         .collect::<Vec<_>>();
 
-    // need to create a function that can build the bookkeeping table
+    let constant = MultilinearPoly::new_extend_to_power_of_two(
+        layer_proving_info.v_subsets[0].clone(),
+        Fields::Base(F::zero()),
+    )
+    .evaluate(phase_one_challenges);
+
+    // generate the bookkeeping tables
+    let add_tables_with_constant = build_bookkeeping_tables(
+        &igz,
+        &iux,
+        &layer_proving_info.add_subsets,
+        &constant,
+        &subset_lens,
+    );
+
+    let add_tables_with_identity = build_bookkeeping_tables_with_identity(
+        &igz,
+        &iux,
+        &layer_proving_info.add_subsets,
+        &subset_lens,
+    );
+
+    let mul_tables = build_bookkeeping_tables(
+        &igz,
+        &iux,
+        &layer_proving_info.mul_subsets,
+        &constant,
+        &subset_lens,
+    );
     todo!()
 }
 
@@ -49,7 +77,7 @@ fn build_bookkeeping_tables<F: Field, E: ExtensionField<F>>(
     iux: &[Fields<F, E>],
     sparse_entries: &[Vec<[usize; 3]>],
     constant: &Fields<F, E>,
-    table_lens: Vec<usize>,
+    table_lens: &[usize],
 ) -> Vec<Vec<Fields<F, E>>> {
     // we are not building the table the conventional way
     // how do we figure out the length of each table??
@@ -79,7 +107,7 @@ fn build_bookkeeping_tables_with_identity<F: Field, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     iux: &[Fields<F, E>],
     sparse_entries: &[Vec<[usize; 3]>],
-    table_lens: Vec<usize>,
+    table_lens: &[usize],
 ) -> Vec<Vec<Fields<F, E>>> {
     debug_assert_eq!(sparse_entries.len(), table_lens.len());
     let mut tables = vec![];

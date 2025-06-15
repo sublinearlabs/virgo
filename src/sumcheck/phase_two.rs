@@ -8,9 +8,7 @@ use poly::{
     Fields, MultilinearExtension,
 };
 use sum_check::{
-    padded_sumcheck::{self, PaddedSumcheck},
-    primitives::SumCheckProof,
-    sumcheckable::Sumcheckable,
+    padded_sumcheck::PaddedSumcheck, primitives::SumCheckProof, sumcheckable::Sumcheckable,
 };
 use transcript::Transcript;
 

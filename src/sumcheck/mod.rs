@@ -45,6 +45,20 @@ fn merge_sumcheck_proofs<F: Field, E: ExtensionField<F>>(
 
 #[cfg(test)]
 mod test {
+    use crate::{circuit::test::circuit_1, sumcheck::prove_sumcheck_layer};
+    use p3_field::{extension::BinomialExtensionField, AbstractField, ExtensionField, Field};
+    use p3_mersenne_31::Mersenne31 as F;
+    use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+    use transcript::Transcript;
+    type E = BinomialExtensionField<F, 3>;
+
+    fn to_fields<F: Field, E: ExtensionField<F>>(values: Vec<u32>) -> Vec<Fields<F, E>> {
+        values
+            .into_iter()
+            .map(|v| Fields::Base(F::from_canonical_u32(v)))
+            .collect::<Vec<_>>()
+    }
+
     #[test]
     fn test_prove_and_verify_sumcheck_layer() {
         // what is my testing plan
@@ -55,5 +69,30 @@ mod test {
         // 5. generate the layer proving info and transcript
         // 6. pass that to the sumcheck prover
         // 7. partially verify the sumcheck proof (make sure all is well)
+
+        let circuit = circuit_1();
+
+        let circuit_evals = circuit.eval(&to_fields::<F, E>(vec![1, 2, 3, 4, 5, 6]));
+
+        let output_mle = MultilinearPoly::new_extend_to_power_of_two(
+            circuit_evals[0].clone(),
+            Fields::Base(F::zero()),
+        );
+
+        let output_point = to_fields(vec![45]);
+        let claimed_sum = output_mle.evaluate(&output_point);
+
+        let output_layer_proving_info = circuit
+            .generate_layer_proving_info(0)
+            .extract_subsets(&circuit_evals);
+
+        let mut prover_transcript = Transcript::<F, E>::init();
+
+        prove_sumcheck_layer(
+            claimed_sum,
+            &output_point,
+            &output_layer_proving_info,
+            &mut prover_transcript,
+        );
     }
 }

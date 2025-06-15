@@ -9,3 +9,4 @@ p3-goldilocks = "0.2.0"
 sum_check = { git = "https://github.com/sublinearlabs/sl-core.git" }
 poly = { git = "https://github.com/sublinearlabs/sl-core.git" }
 transcript = { git = "https://github.com/sublinearlabs/sl-core.git" }
+p3-mersenne-31 = "0.2.0"

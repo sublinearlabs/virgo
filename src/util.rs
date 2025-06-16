@@ -331,6 +331,6 @@ mod tests {
 
         let mut verifier_transcript = Transcript::<F, E>::init();
 
-        let verify = S::verify_partial(&proof.unwrap(), &mut verifier_transcript);
+        let _verify = S::verify_partial(&proof.unwrap(), &mut verifier_transcript);
     }
 }

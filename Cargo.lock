@@ -480,8 +480,10 @@ dependencies = [
  "anyhow",
  "p3-field",
  "p3-goldilocks",
+ "p3-mersenne-31",
  "poly",
  "sum_check",
+ "transcript",
 ]
 
 [[package]]

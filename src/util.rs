@@ -196,19 +196,23 @@ mod tests {
     use std::vec;
 
     use p3_field::{AbstractField, extension::BinomialExtensionField};
-    use p3_goldilocks::Goldilocks;
+    use p3_mersenne_31::Mersenne31;
     use poly::{
         Fields, MultilinearExtension,
         mle::MultilinearPoly,
         utils::{generate_eq, product_poly},
+        vpoly::VPoly,
     };
+    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use transcript::Transcript;
 
-    type F = Goldilocks;
-    type E = BinomialExtensionField<F, 2>;
+    type F = Mersenne31;
+    type E = BinomialExtensionField<F, 3>;
+    type S = SumCheck<F, E, VPoly<F, E>>;
 
     use crate::{
         circuit::test::circuit_1,
-        util::{Subclaim, build_agi, build_virgo_ahg},
+        util::{Subclaim, build_agi, build_virgo_ahg, n_to_1_folding},
     };
 
     #[test]
@@ -220,16 +224,16 @@ mod tests {
         let layer_evaluations = circuit.eval(
             &[1, 2, 3, 4, 5, 6]
                 .iter()
-                .map(|val| Goldilocks::from_canonical_usize(*val))
-                .collect::<Vec<Goldilocks>>(),
+                .map(|val| F::from_canonical_usize(*val))
+                .collect::<Vec<F>>(),
         );
 
         assert_eq!(
             layer_evaluations[0],
             [9, 121]
                 .iter()
-                .map(|val| Goldilocks::from_canonical_usize(*val))
-                .collect::<Vec<Goldilocks>>()
+                .map(|val| F::from_canonical_usize(*val))
+                .collect::<Vec<F>>()
         );
 
         // Generate sumcheck eqn for layer 1
@@ -254,7 +258,7 @@ mod tests {
     }
 
     #[test]
-    fn test_build_agi() {
+    fn test_n_to_1_folding() {
         let main_poly_eval = Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6]);
 
         let main_poly = MultilinearPoly::new_extend_to_power_of_two(
@@ -319,5 +323,14 @@ mod tests {
             + (alphas[2] * subclaims[2].eval);
 
         assert_eq!(res, expected);
+
+        let mut prover_transcript = Transcript::<F, E>::init();
+
+        let proof =
+            n_to_1_folding::<F, E, S>(&mut prover_transcript, &alphas, &subclaims, &main_poly_eval);
+
+        let mut verifier_transcript = Transcript::<F, E>::init();
+
+        let verify = S::verify_partial(&proof.unwrap(), &mut verifier_transcript);
     }
 }

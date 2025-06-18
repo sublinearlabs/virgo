@@ -289,7 +289,7 @@ checksum = "3b3cff922bd51709b605d9ead9aa71031d81447142d828eb4a6eba76fe619f9b"
 [[package]]
 name = "poly"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#80f8b0a1bd9ccc68e618344ddfc7230abb16c849"
+source = "git+https://github.com/sublinearlabs/sl-core.git#fc79d9c6b30791b97868e48f8934bfed68e4b011"
 dependencies = [
  "p3-challenger",
  "p3-field",
@@ -384,7 +384,7 @@ checksum = "fe895eb47f22e2ddd4dabc02bce419d2e643c8e3b585c78158b349195bc24d82"
 [[package]]
 name = "sum_check"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#80f8b0a1bd9ccc68e618344ddfc7230abb16c849"
+source = "git+https://github.com/sublinearlabs/sl-core.git#fc79d9c6b30791b97868e48f8934bfed68e4b011"
 dependencies = [
  "anyhow",
  "p3-challenger",
@@ -449,7 +449,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#80f8b0a1bd9ccc68e618344ddfc7230abb16c849"
+source = "git+https://github.com/sublinearlabs/sl-core.git#fc79d9c6b30791b97868e48f8934bfed68e4b011"
 dependencies = [
  "p3-challenger",
  "p3-field",

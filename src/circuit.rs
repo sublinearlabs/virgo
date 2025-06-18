@@ -395,5 +395,16 @@ pub(crate) mod test {
                 mul_subsets: vec![vec![[0, 0, 1]], vec![]]
             }
         );
+
+        let output_layer_proving_info = circuit.generate_layer_proving_info(2);
+        assert_eq!(
+            output_layer_proving_info,
+            LayerProvingInfo {
+                layer_id: 1,
+                v_subset_instruction: vec![vec![0, 1, 2, 3, 4, 5]],
+                add_subsets: vec![vec![[0, 0, 1], [2, 2, 3], [3, 4, 5]]],
+                mul_subsets: vec![vec![[1, 0, 1]]]
+            }
+        );
     }
 }

@@ -72,39 +72,44 @@ mod test {
         // 7. partially verify the sumcheck proof (make sure all is well)
 
         let circuit = circuit_1();
+        let random_value_bank = to_fields(vec![12, 34, 56, 78, 43, 56, 78, 45]);
 
         let circuit_evals = circuit.eval(&to_fields::<F, E>(vec![1, 2, 3, 4, 5, 6]));
 
-        let output_mle = MultilinearPoly::new_extend_to_power_of_two(
-            circuit_evals[0].clone(),
-            Fields::Base(F::zero()),
-        );
+        dbg!(circuit.layers.len());
 
-        let output_point = to_fields(vec![45]);
-        let claimed_sum = output_mle.evaluate(&output_point);
+        for i in 0..circuit.layers.len() {
+            let layer_mle = MultilinearPoly::new_extend_to_power_of_two(
+                circuit_evals[i].clone(),
+                Fields::Base(F::zero()),
+            );
 
-        let output_layer_proving_info = circuit
-            .generate_layer_proving_info(0)
-            .extract_subsets(&circuit_evals);
+            let output_point = &random_value_bank[..layer_mle.num_vars()];
+            let claimed_sum = layer_mle.evaluate(output_point);
 
-        let mut prover_transcript = Transcript::<F, E>::init();
+            let mut output_layer_proving_info = circuit
+                .generate_layer_proving_info(i)
+                .extract_subsets(&circuit_evals);
 
-        let sumcheck_proof = prove_sumcheck_layer(
-            claimed_sum,
-            &output_point,
-            &output_layer_proving_info,
-            &mut prover_transcript,
-        );
+            let mut prover_transcript = Transcript::<F, E>::init();
 
-        let mut verifier_transcript = Transcript::<F, E>::init();
+            let sumcheck_proof = prove_sumcheck_layer(
+                claimed_sum,
+                output_point,
+                &output_layer_proving_info,
+                &mut prover_transcript,
+            );
 
-        let verification_result = SumCheck::<F, E, MultilinearPoly<F, E>>::verify_partial(
-            &sumcheck_proof,
-            &mut verifier_transcript,
-        );
+            let mut verifier_transcript = Transcript::<F, E>::init();
 
-        // TODO: perform the oracle check
+            let verification_result = SumCheck::<F, E, MultilinearPoly<F, E>>::verify_partial(
+                &sumcheck_proof,
+                &mut verifier_transcript,
+            );
 
-        dbg!(verification_result);
+            // TODO: perform the oracle check
+
+            dbg!(verification_result);
+        }
     }
 }

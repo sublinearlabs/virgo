@@ -2,10 +2,10 @@ use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{
-    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
+    Fields, MultilinearExtension,
 };
 use sum_check::{
     padded_sumcheck::PaddedSumcheck, primitives::SumCheckProof, sumcheckable::Sumcheckable,
@@ -39,7 +39,7 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
 
     // generate the bookkeeping tables
     let add_tables_with_constant = build_bookkeeping_tables(
-        &igz,
+        igz,
         &iux,
         &layer_proving_info.add_subsets,
         &constant,
@@ -47,14 +47,14 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
     );
 
     let add_tables_with_identity = build_bookkeeping_tables_with_identity(
-        &igz,
+        igz,
         &iux,
         &layer_proving_info.add_subsets,
         &subset_lens,
     );
 
     let mul_tables = build_bookkeeping_tables(
-        &igz,
+        igz,
         &iux,
         &layer_proving_info.mul_subsets,
         &constant,
@@ -222,7 +222,7 @@ fn merge_round_messages<F: Field, E: ExtensionField<F>>(
 
 #[cfg(test)]
 mod tests {
-    use p3_field::{ExtensionField, Field, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, ExtensionField, Field};
     use p3_goldilocks::Goldilocks as F;
     use poly::Fields;
 
@@ -235,6 +235,7 @@ mod tests {
             .map(|v| Fields::Base(F::from_canonical_usize(v)))
             .collect::<Vec<_>>()
     }
+
     #[test]
     fn test_merge_round_messages() {
         let round_messages = [

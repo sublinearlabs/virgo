@@ -62,21 +62,10 @@ mod test {
 
     #[test]
     fn test_prove_and_verify_sumcheck_layer() {
-        // what is my testing plan
-        // 1. need a circuit
-        // 2. evaluate that circuit on some given input
-        // 3. convert the evaluation entry that I am interested in to a multilinear poly
-        // 4. evaluate that at some random point to get a claim
-        // 5. generate the layer proving info and transcript
-        // 6. pass that to the sumcheck prover
-        // 7. partially verify the sumcheck proof (make sure all is well)
-
         let circuit = circuit_1();
         let random_value_bank = to_fields(vec![12, 34, 56, 78, 43, 56, 78, 45]);
 
         let circuit_evals = circuit.eval(&to_fields::<F, E>(vec![1, 2, 3, 4, 5, 6]));
-
-        dbg!(circuit.layers.len());
 
         for i in 0..circuit.layers.len() {
             let layer_mle = MultilinearPoly::new_extend_to_power_of_two(
@@ -87,7 +76,7 @@ mod test {
             let output_point = &random_value_bank[..layer_mle.num_vars()];
             let claimed_sum = layer_mle.evaluate(output_point);
 
-            let mut output_layer_proving_info = circuit
+            let layer_proving_info = circuit
                 .generate_layer_proving_info(i)
                 .extract_subsets(&circuit_evals);
 
@@ -96,7 +85,7 @@ mod test {
             let sumcheck_proof = prove_sumcheck_layer(
                 claimed_sum,
                 output_point,
-                &output_layer_proving_info,
+                &layer_proving_info,
                 &mut prover_transcript,
             );
 
@@ -107,9 +96,7 @@ mod test {
                 &mut verifier_transcript,
             );
 
-            // TODO: perform the oracle check
-
-            dbg!(verification_result);
+            assert!(matches!(verification_result, (_, _)));
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::util::{GateAddr, LayerId, LayerProvingInfo};
+use crate::util::{GateAddr, LayerId, LayerProvingInfo, push_index};
 
 #[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings
@@ -71,18 +71,10 @@ impl GeneralCircuit {
                 norm_layer_id(gate.inputs[1].0),
             ];
 
-            let mut left_sparse_index = 0;
-            let mut right_sparse_index = 0;
-
-            if !v_subset_instruction[norm_left].contains(&gate.inputs[0].1) {
-                v_subset_instruction[norm_left].push(gate.inputs[0].1);
-                left_sparse_index = v_subset_instruction[norm_left].len() - 1;
-            }
-
-            if !v_subset_instruction[norm_right].contains(&gate.inputs[1].1) {
-                v_subset_instruction[norm_right].push(gate.inputs[1].1);
-                right_sparse_index = v_subset_instruction[norm_right].len() - 1;
-            }
+            let left_sparse_index =
+                push_index(&mut v_subset_instruction[norm_left], gate.inputs[0].1);
+            let right_sparse_index =
+                push_index(&mut v_subset_instruction[norm_right], gate.inputs[1].1);
 
             // build the add_i / mul_i entry based on v_subset
             let sparse_entry = [gate_index, left_sparse_index, right_sparse_index];
@@ -371,12 +363,8 @@ pub(crate) mod test {
             }
         );
 
-        let evaluations = circuit.eval(
-            &[1, 2, 3, 4, 5, 6]
-                .into_iter()
-                .map(F::from_canonical_u32)
-                .collect::<Vec<_>>(),
-        );
+        let evaluations =
+            circuit.eval::<Fields<F, E>>(&Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6]));
 
         let layer_info_with_subset =
             output_layer_proving_info.extract_subsets::<F, E>(&evaluations);
@@ -397,6 +385,17 @@ pub(crate) mod test {
                 v_subset_instruction: vec![vec![0, 1, 2], vec![3]],
                 add_subsets: vec![vec![], vec![[1, 2, 0]]],
                 mul_subsets: vec![vec![[0, 0, 1]], vec![]]
+            }
+        );
+
+        let output_layer_proving_info = circuit.generate_layer_proving_info(2);
+        assert_eq!(
+            output_layer_proving_info,
+            LayerProvingInfo {
+                layer_id: 2,
+                v_subset_instruction: vec![vec![0, 1, 2, 3, 4, 5]],
+                add_subsets: vec![vec![[0, 0, 1], [2, 2, 3], [3, 4, 5]]],
+                mul_subsets: vec![vec![[1, 0, 1]]]
             }
         );
     }

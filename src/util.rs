@@ -33,7 +33,7 @@ impl LayerProvingInfo {
     #[allow(dead_code)]
     pub(crate) fn extract_subsets<F: Field, E: ExtensionField<F>>(
         self,
-        evaluations: &[Vec<F>],
+        evaluations: &[Vec<Fields<F, E>>],
     ) -> LayerProvingInfoWithSubset<F, E> {
         let subset_evaluations = &evaluations[(self.layer_id + 1)..];
         let concrete_subset_values = self
@@ -42,7 +42,7 @@ impl LayerProvingInfo {
             .zip(subset_evaluations)
             .map(|(inst, data)| {
                 inst.iter()
-                    .map(|index| Fields::Base(data[*index]))
+                    .map(|index| data[*index])
                     .collect::<Vec<Fields<F, E>>>()
             })
             .collect::<Vec<Vec<Fields<F, E>>>>();
@@ -65,80 +65,6 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,
     /// Subset mul i's based on subset v's
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
-}
-
-type Ahg<F, E> = (Vec<Fields<F, E>>, Vec<Fields<F, E>>, Vec<Fields<F, E>>);
-
-#[allow(dead_code)]
-pub fn build_virgo_ahg<F: Field, E: ExtensionField<F>>(
-    layer_index: usize,
-    circuit_depth: usize,
-    igz: &[Fields<F, E>],
-    layer_proving_info: &LayerProvingInfoWithSubset<F, E>,
-    total_gates_in_layer: usize,
-) -> Ahg<F, E> {
-    let depth_from_layer = circuit_depth - layer_index - 1;
-
-    // Get identity polyynomial for each subset
-    let mut identity = vec![];
-
-    for layer_index in 0..depth_from_layer {
-        identity.push(vec![
-            Fields::Extension(E::one());
-            layer_proving_info.v_subsets[layer_index].len()
-        ]);
-    }
-
-    let add_b_ahg = phase_one(
-        igz,
-        &layer_proving_info.add_subsets,
-        &identity,
-        depth_from_layer,
-        total_gates_in_layer,
-    );
-
-    let add_c_ahg = phase_one(
-        igz,
-        &layer_proving_info.add_subsets,
-        &layer_proving_info.v_subsets,
-        depth_from_layer,
-        total_gates_in_layer,
-    );
-
-    let mul_ahg = phase_one(
-        igz,
-        &layer_proving_info.mul_subsets,
-        &layer_proving_info.v_subsets,
-        depth_from_layer,
-        total_gates_in_layer,
-    );
-
-    (add_b_ahg, add_c_ahg, mul_ahg)
-}
-
-#[allow(dead_code)]
-pub fn phase_one<F: Field, E: ExtensionField<F>>(
-    igz: &[Fields<F, E>],
-    f1: &[Vec<[usize; 3]>],
-    vi_subset: &[Vec<Fields<F, E>>],
-    depth_from_layer: usize,
-    total_gates_in_layer: usize,
-) -> Vec<Fields<F, E>> {
-    // The total number of inputs to a layer cant be more than (2 * total gates in layer)
-    // since the circuit is fan in 2
-    let mut res = vec![Fields::Extension(E::zero()); 2 * total_gates_in_layer];
-
-    assert_eq!(f1.len(), depth_from_layer);
-    assert_eq!(vi_subset.len(), depth_from_layer);
-
-    for layer_index in 0..f1.len() {
-        for [z, x, y] in &f1[layer_index] {
-            // It is assumed the operation poly outputs 1 where there is a valid gate
-            res[*x] += igz[*z] * vi_subset[layer_index][*y];
-        }
-    }
-
-    res
 }
 
 #[allow(dead_code)]
@@ -191,6 +117,17 @@ where
     S::prove_partial(claimed_sum, &mut poly, transcript)
 }
 
+/// Returns the index of alement if it exists.
+/// If it doesn't pushes and returns the new index
+pub(crate) fn push_index<T: PartialEq>(container: &mut Vec<T>, item: T) -> usize {
+    if let Some(pos) = container.iter().position(|x| *x == item) {
+        pos
+    } else {
+        container.push(item);
+        container.len() - 1
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;
@@ -198,10 +135,7 @@ mod tests {
     use p3_field::{AbstractField, extension::BinomialExtensionField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        Fields, MultilinearExtension,
-        mle::MultilinearPoly,
-        utils::{generate_eq, product_poly},
-        vpoly::VPoly,
+        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
     };
     use sum_check::{SumCheck, interface::SumCheckInterface};
     use transcript::Transcript;
@@ -210,52 +144,7 @@ mod tests {
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::{
-        circuit::test::circuit_1,
-        util::{Subclaim, build_agi, build_virgo_ahg, n_to_1_folding},
-    };
-
-    #[test]
-    fn test_build_ahg() {
-        // Build circuit
-        let circuit = circuit_1();
-
-        // Evaluate circuit on input
-        let layer_evaluations = circuit.eval(
-            &[1, 2, 3, 4, 5, 6]
-                .iter()
-                .map(|val| F::from_canonical_usize(*val))
-                .collect::<Vec<F>>(),
-        );
-
-        assert_eq!(
-            layer_evaluations[0],
-            [9, 121]
-                .iter()
-                .map(|val| F::from_canonical_usize(*val))
-                .collect::<Vec<F>>()
-        );
-
-        // Generate sumcheck eqn for layer 1
-        let layer_index = 1;
-        let total_gates_in_layer = 2;
-
-        let layer_proving_info = circuit.generate_layer_proving_info(layer_index);
-
-        let proving_info_with_subsets = layer_proving_info.extract_subsets(&layer_evaluations);
-
-        let igz = generate_eq::<F, E>(&[Fields::Extension(E::from_canonical_usize(3))]);
-
-        let virgo_ahg = build_virgo_ahg(
-            layer_index,
-            4,
-            &igz,
-            &proving_info_with_subsets,
-            total_gates_in_layer,
-        );
-
-        dbg!(&virgo_ahg);
-    }
+    use crate::util::{Subclaim, build_agi, n_to_1_folding};
 
     #[test]
     fn test_n_to_1_folding() {

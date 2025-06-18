@@ -363,11 +363,8 @@ pub(crate) mod test {
             }
         );
 
-        let evaluations = circuit.eval(
-            &[1, 2, 3, 4, 5, 6]
-                .into_iter()
-                .map(F::from_canonical_u32)
-                .collect::<Vec<_>>(),
+        let evaluations = circuit.eval::<Fields<F, E>>(
+            &Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6])
         );
 
         let layer_info_with_subset =

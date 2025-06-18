@@ -33,7 +33,7 @@ impl LayerProvingInfo {
     #[allow(dead_code)]
     pub(crate) fn extract_subsets<F: Field, E: ExtensionField<F>>(
         self,
-        evaluations: &[Vec<F>],
+        evaluations: &[Vec<Fields<F, E>>],
     ) -> LayerProvingInfoWithSubset<F, E> {
         let subset_evaluations = &evaluations[(self.layer_id + 1)..];
         let concrete_subset_values = self
@@ -42,7 +42,7 @@ impl LayerProvingInfo {
             .zip(subset_evaluations)
             .map(|(inst, data)| {
                 inst.iter()
-                    .map(|index| Fields::Base(data[*index]))
+                    .map(|index| data[*index])
                     .collect::<Vec<Fields<F, E>>>()
             })
             .collect::<Vec<Vec<Fields<F, E>>>>();

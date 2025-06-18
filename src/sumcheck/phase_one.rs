@@ -1,36 +1,32 @@
 use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{Fields, mle::MultilinearPoly, vpoly::VPoly};
-use sum_check::SumCheck;
+use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
 use sum_check::interface::SumCheckInterface;
 use sum_check::primitives::SumCheckProof;
+use sum_check::SumCheck;
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
 
-// TODO: add proper documentation
 pub(crate) fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     claimed_sum: Fields<F, E>,
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
-    // TODO: document this section
     let add_b_ahg = build_bookkeeping_table_with_identity(
         &igz,
         &layer_proving_info.add_subsets,
         layer_proving_info.v_subsets[0].len(),
     );
 
-    // TODO: document this section
     let add_c_ahg = build_bookkeeping_table(
         &igz,
         &layer_proving_info.add_subsets,
         &layer_proving_info.v_subsets,
     );
 
-    // TODO: document this section
     let mul_ahg = build_bookkeeping_table(
         &igz,
         &layer_proving_info.mul_subsets,
@@ -62,7 +58,6 @@ pub(crate) fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
     SumCheck::prove_partial(claimed_sum, &mut poly, transcript).unwrap()
 }
 
-// TODO: add proper documentation
 fn build_bookkeeping_table<F: Field, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     sparse_entries: &[Vec<[usize; 3]>],
@@ -75,8 +70,6 @@ fn build_bookkeeping_table<F: Field, E: ExtensionField<F>>(
     // as the first subset vector is also the common vector for all layers
     let mut table = vec![Fields::Base(F::zero()); subsets[0].len()];
 
-    // next we need to iterate over each (entry, subset) pair
-    // and use that to populate the table
     for (sparse_entry, subset) in sparse_entries.iter().zip(subsets) {
         for [z, x, y] in sparse_entry {
             table[*x] += igz[*z] * subset[*y];
@@ -86,7 +79,6 @@ fn build_bookkeeping_table<F: Field, E: ExtensionField<F>>(
     table
 }
 
-// TODO: add documentation
 fn build_bookkeeping_table_with_identity<F: Field, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     sparse_entries: &[Vec<[usize; 3]>],

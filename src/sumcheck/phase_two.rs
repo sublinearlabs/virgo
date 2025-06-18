@@ -14,15 +14,12 @@ use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
 
-// TODO: create hackmd describing the phase two analysis
 pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     phase_one_challenges: &[Fields<F, E>],
     layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
-    // I need a function that can generate the tables
-    // should take Igz and Iux
     let iux = generate_eq(phase_one_challenges);
 
     let subset_lens = layer_proving_info
@@ -112,13 +109,6 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
         })
         .collect::<Vec<_>>();
 
-    // perform sumcheck
-    // might be a repitition of the main sumcheck loop
-    // what does this look like?
-    // first I need something that can merge round polynomials
-    // okay that is done now, what next?
-    // need to accumulate challenges and round polynomials
-
     let mut round_messages = vec![];
     let mut challenges = vec![];
 
@@ -151,7 +141,6 @@ pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
     }
 }
 
-// what does this require?
 fn build_bookkeeping_tables<F: Field, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     iux: &[Fields<F, E>],
@@ -159,19 +148,9 @@ fn build_bookkeeping_tables<F: Field, E: ExtensionField<F>>(
     constant: &Fields<F, E>,
     table_lens: &[usize],
 ) -> Vec<Vec<Fields<F, E>>> {
-    // we are not building the table the conventional way
-    // how do we figure out the length of each table??
-    // the table length should be based on the size of c
-    // what about the table that doesn't make use of c at all
-    //
-    // table[y] += Igz[g] * Iux[x] * constant
-    // I guess we can get the table length from the corresponding subsets
-
     debug_assert_eq!(sparse_entries.len(), table_lens.len());
     let mut tables = vec![];
 
-    // what do we iterate over??
-    // has to be sparse entries
     for (sparse_entry, table_len) in sparse_entries.iter().zip(table_lens) {
         let mut table = vec![Fields::Base(F::zero()); *table_len];
         for [z, x, y] in sparse_entry {
@@ -192,8 +171,6 @@ fn build_bookkeeping_tables_with_identity<F: Field, E: ExtensionField<F>>(
     debug_assert_eq!(sparse_entries.len(), table_lens.len());
     let mut tables = vec![];
 
-    // what do we iterate over??
-    // has to be sparse entries
     for (sparse_entry, table_len) in sparse_entries.iter().zip(table_lens) {
         let mut table = vec![Fields::Base(F::zero()); *table_len];
         for [z, x, y] in sparse_entry {

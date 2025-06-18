@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
+use poly::{Fields, mle::MultilinearPoly, vpoly::VPoly};
+use sum_check::SumCheck;
 use sum_check::interface::SumCheckInterface;
 use sum_check::primitives::SumCheckProof;
-use sum_check::SumCheck;
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;

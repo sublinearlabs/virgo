@@ -1,4 +1,4 @@
-use crate::util::{push_index, GateAddr, LayerId, LayerProvingInfo};
+use crate::util::{GateAddr, LayerId, LayerProvingInfo, push_index};
 
 #[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings
@@ -363,9 +363,8 @@ pub(crate) mod test {
             }
         );
 
-        let evaluations = circuit.eval::<Fields<F, E>>(
-            &Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6])
-        );
+        let evaluations =
+            circuit.eval::<Fields<F, E>>(&Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6]));
 
         let layer_info_with_subset =
             output_layer_proving_info.extract_subsets::<F, E>(&evaluations);

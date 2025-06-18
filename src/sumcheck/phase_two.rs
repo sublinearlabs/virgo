@@ -2,10 +2,10 @@ use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{
+    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
-    Fields, MultilinearExtension,
 };
 use sum_check::{
     padded_sumcheck::PaddedSumcheck, primitives::SumCheckProof, sumcheckable::Sumcheckable,
@@ -199,7 +199,7 @@ fn merge_round_messages<F: Field, E: ExtensionField<F>>(
 
 #[cfg(test)]
 mod tests {
-    use p3_field::{extension::BinomialExtensionField, ExtensionField, Field};
+    use p3_field::{ExtensionField, Field, extension::BinomialExtensionField};
     use p3_goldilocks::Goldilocks as F;
     use poly::Fields;
 

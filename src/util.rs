@@ -74,6 +74,17 @@ pub(crate) fn build_cki(vi_subset_instruction: &Vec<Vec<usize>>) -> Vec<Vec<(usi
     res
 }
 
+/// Returns the index of alement if it exists.
+/// If it doesn't pushes and returns the new index
+pub(crate) fn push_index<T: PartialEq>(container: &mut Vec<T>, item: T) -> usize {
+    if let Some(pos) = container.iter().position(|x| *x == item) {
+        pos
+    } else {
+        container.push(item);
+        container.len() - 1
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{circuit::test::circuit_1, util::build_cki};

@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{Fields, mle::MultilinearPoly, vpoly::VPoly};
-use sum_check::SumCheck;
+use poly::{mle::MultilinearPoly, vpoly::VPoly, Fields};
 use sum_check::interface::SumCheckInterface;
 use sum_check::primitives::SumCheckProof;
+use sum_check::SumCheck;
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
@@ -16,19 +16,19 @@ pub(crate) fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
     let add_b_ahg = build_bookkeeping_table_with_identity(
-        &igz,
+        igz,
         &layer_proving_info.add_subsets,
         layer_proving_info.v_subsets[0].len(),
     );
 
     let add_c_ahg = build_bookkeeping_table(
-        &igz,
+        igz,
         &layer_proving_info.add_subsets,
         &layer_proving_info.v_subsets,
     );
 
     let mul_ahg = build_bookkeeping_table(
-        &igz,
+        igz,
         &layer_proving_info.mul_subsets,
         &layer_proving_info.v_subsets,
     );

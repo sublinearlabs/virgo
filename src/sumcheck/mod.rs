@@ -4,13 +4,13 @@ mod phase_two;
 use p3_field::{ExtensionField, Field, PrimeField32};
 use phase_one::prove_phase_one;
 use phase_two::prove_phase_two;
-use poly::{Fields, utils::generate_eq};
+use poly::{utils::generate_eq, Fields};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
 use crate::util::LayerProvingInfoWithSubset;
 
-fn prove_sumcheck_layer<F: Field + PrimeField32, E: ExtensionField<F>>(
+pub(crate) fn prove_sumcheck_layer<F: Field + PrimeField32, E: ExtensionField<F>>(
     claimed_sum: Fields<F, E>,
     output_point: &[Fields<F, E>],
     layer_proving_info: &LayerProvingInfoWithSubset<F, E>,
@@ -46,10 +46,10 @@ fn merge_sumcheck_proofs<F: Field, E: ExtensionField<F>>(
 #[cfg(test)]
 mod test {
     use crate::{circuit::test::circuit_1, sumcheck::prove_sumcheck_layer};
-    use p3_field::{AbstractField, ExtensionField, Field, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField, ExtensionField, Field};
     use p3_mersenne_31::Mersenne31 as F;
-    use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
     type E = BinomialExtensionField<F, 3>;
 

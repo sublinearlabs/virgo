@@ -13,7 +13,7 @@ use crate::util::LayerProvingInfoWithSubset;
 fn prove_sumcheck_layer<F: Field + PrimeField32, E: ExtensionField<F>>(
     claimed_sum: Fields<F, E>,
     output_point: &[Fields<F, E>],
-    layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
+    layer_proving_info: &LayerProvingInfoWithSubset<F, E>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
     let igz = generate_eq(output_point);

@@ -17,7 +17,7 @@ use crate::util::LayerProvingInfoWithSubset;
 pub(crate) fn prove_phase_two<F: Field + PrimeField32, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     phase_one_challenges: &[Fields<F, E>],
-    layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
+    layer_proving_info: &LayerProvingInfoWithSubset<F, E>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
     let iux = generate_eq(phase_one_challenges);

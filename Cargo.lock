@@ -477,6 +477,7 @@ checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
 name = "virgo"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "p3-field",
  "p3-goldilocks",
  "p3-mersenne-31",

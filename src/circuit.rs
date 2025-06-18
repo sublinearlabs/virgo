@@ -189,8 +189,11 @@ pub(crate) mod test {
         circuit_builder::Builder,
         util::LayerProvingInfo,
     };
-    use p3_field::AbstractField;
+    use p3_field::{AbstractField, extension::BinomialExtensionField};
     use p3_goldilocks::Goldilocks as F;
+    use poly::Fields;
+
+    type E = BinomialExtensionField<F, 2>;
 
     // constructs a circuit that peforms a len 3 vector dot product
     // [a, b, c] dot [d, e, f]
@@ -367,13 +370,14 @@ pub(crate) mod test {
                 .collect::<Vec<_>>(),
         );
 
-        let layer_info_with_subset = output_layer_proving_info.extract_subsets(&evaluations);
+        let layer_info_with_subset =
+            output_layer_proving_info.extract_subsets::<F, E>(&evaluations);
         assert_eq!(
             layer_info_with_subset.v_subsets,
             vec![
-                vec![F::from_canonical_u32(6), F::from_canonical_u32(11)],
-                vec![F::from_canonical_u32(11)],
-                vec![F::from_canonical_u32(3)]
+                Fields::from_u32_vec(vec![6, 11]),
+                Fields::from_u32_vec(vec![11]),
+                Fields::from_u32_vec(vec![3]),
             ]
         );
 

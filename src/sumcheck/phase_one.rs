@@ -12,7 +12,7 @@ use crate::util::LayerProvingInfoWithSubset;
 pub(crate) fn prove_phase_one<F: Field + PrimeField32, E: ExtensionField<F>>(
     igz: &[Fields<F, E>],
     claimed_sum: Fields<F, E>,
-    layer_proving_info: &LayerProvingInfoWithSubset<Fields<F, E>>,
+    layer_proving_info: &LayerProvingInfoWithSubset<F, E>,
     transcript: &mut Transcript<F, E>,
 ) -> SumCheckProof<F, E> {
     let add_b_ahg = build_bookkeeping_table_with_identity(

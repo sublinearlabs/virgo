@@ -1,10 +1,10 @@
 // use libra::utils::{build_phase_one_libra_sumcheck_poly, generate_eq, initialize_phase_one};
 use p3_field::{ExtensionField, Field};
 use poly::{
-    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
+    Fields, MultilinearExtension,
 };
 use sum_check::interface::SumCheckInterface;
 
@@ -30,7 +30,6 @@ pub(crate) struct LayerProvingInfo {
 }
 
 impl LayerProvingInfo {
-    #[allow(dead_code)]
     pub(crate) fn extract_subsets<F: Field, E: ExtensionField<F>>(
         self,
         evaluations: &[Vec<Fields<F, E>>],
@@ -65,6 +64,12 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,
     /// Subset mul i's based on subset v's
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
+}
+
+impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
+    pub(crate) fn eval(&self, hints: &[Fields<F, E>], challenges: &[Fields<F, E>]) -> Fields<F, E> {
+        todo!()
+    }
 }
 
 #[allow(dead_code)]
@@ -132,19 +137,19 @@ pub(crate) fn push_index<T: PartialEq>(container: &mut Vec<T>, item: T) -> usize
 mod tests {
     use std::vec;
 
-    use p3_field::{AbstractField, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
+        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
     };
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
 
     type F = Mersenne31;
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::util::{Subclaim, build_agi, n_to_1_folding};
+    use crate::util::{build_agi, n_to_1_folding, Subclaim};
 
     #[test]
     fn test_n_to_1_folding() {

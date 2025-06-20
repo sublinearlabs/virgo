@@ -31,6 +31,7 @@ pub(crate) struct LayerProvingInfo {
 }
 
 impl LayerProvingInfo {
+    #[allow(dead_code)]
     pub(crate) fn extract_subsets<F: Field, E: ExtensionField<F>>(
         self,
         evaluations: &[Vec<Fields<F, E>>],
@@ -54,6 +55,7 @@ impl LayerProvingInfo {
         }
     }
 
+    #[allow(dead_code)]
     /// Evaluates the layer equation given concrete hints for the subset evaluations
     pub(crate) fn eval<F: Field, E: ExtensionField<F>>(
         &self,
@@ -115,6 +117,7 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
 }
 
 impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
+    #[allow(dead_code)]
     /// Evaluates all subsets at a given point
     /// subsets only take up to num_var points
     pub(crate) fn eval_subsets(&self, eval_point: &[Fields<F, E>]) -> Vec<Fields<F, E>> {
@@ -132,7 +135,7 @@ impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
             &eval_point[subset_polys[0].num_vars()..],
         );
 
-        let b_eval = subset_polys[0].evaluate(&b_points);
+        let b_eval = subset_polys[0].evaluate(b_points);
 
         let c_evals = subset_polys
             .iter()
@@ -145,6 +148,7 @@ impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
 #[derive(Debug, Clone)]
 pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     r: Vec<Fields<F, E>>,
+    #[allow(dead_code)]
     eval: Fields<F, E>,
     instruction: Vec<(usize, usize)>,
 }

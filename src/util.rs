@@ -62,11 +62,25 @@ impl LayerProvingInfo {
         // +1 because we need two evaluations for V_{i+1}
         debug_assert_eq!(self.add_subsets.len() + 1, hints.len());
 
-        // we never evaluate anything
-        // we could abstract into a function that evaluates the padded sparse entry
-        // given the challenges and the Igz, Iux
+        // f(g, b, c)
+        // |g| = |output_point|
+        // |b| = V_{i+1}.num_vars()
+
+        // I need a clean way to partition
+
+        // I need a quick way to know the size of x
         //
         todo!()
+    }
+}
+
+// TODO: move this somewhere else
+fn n_vars_from_len(len: usize) -> usize {
+    assert_ne!(len, 0);
+    if len == 1 {
+        1
+    } else {
+        len.next_power_of_two().ilog2() as usize
     }
 }
 

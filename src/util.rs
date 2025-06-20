@@ -62,9 +62,13 @@ impl LayerProvingInfo {
         // +1 because we need two evaluations for V_{i+1}
         debug_assert_eq!(self.add_subsets.len() + 1, hints.len());
 
-        // f(g, b, c)
-        // |g| = |output_point|
-        // |b| = V_{i+1}.num_vars()
+        // determine the number of variables for each subset
+        // this determines how we partition the challenge points
+        let subset_n_vars = self
+            .v_subset_instruction
+            .iter()
+            .map(|subset| n_vars_from_len(subset.len()))
+            .collect::<Vec<_>>();
 
         // I need a clean way to partition
 

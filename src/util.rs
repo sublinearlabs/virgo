@@ -2,10 +2,10 @@ use std::iter::once;
 
 use p3_field::{ExtensionField, Field};
 use poly::{
+    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
-    Fields, MultilinearExtension,
 };
 use sum_check::interface::SumCheckInterface;
 
@@ -104,7 +104,8 @@ impl LayerProvingInfo {
         evaluation
     }
 
-    // TODO: add documentation
+    #[allow(dead_code)]
+    /// Given hint and circuit context, constructs subclaims
     pub(crate) fn hints_to_subclaims<F: Field, E: ExtensionField<F>>(
         &self,
         hints: &[Fields<F, E>],
@@ -296,6 +297,7 @@ fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
     eval
 }
 
+#[allow(dead_code)]
 /// Extract the evaluations from a collection of subclaims
 pub(crate) fn subclaims_to_hints<F: Field, E: ExtensionField<F>>(
     subclaims: &[Subclaim<F, E>],
@@ -307,12 +309,12 @@ pub(crate) fn subclaims_to_hints<F: Field, E: ExtensionField<F>>(
 mod tests {
     use std::vec;
 
-    use p3_field::{extension::BinomialExtensionField, AbstractField, Field};
+    use p3_field::{AbstractField, extension::BinomialExtensionField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
+        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
     };
-    use sum_check::{interface::SumCheckInterface, SumCheck};
+    use sum_check::{SumCheck, interface::SumCheckInterface};
     use transcript::Transcript;
 
     type F = Mersenne31;
@@ -321,7 +323,7 @@ mod tests {
 
     use crate::{
         circuit::test::circuit_1,
-        util::{build_agi, n_to_1_folding, n_vars_from_len, subclaims_to_hints, Subclaim},
+        util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len, subclaims_to_hints},
     };
 
     #[test]

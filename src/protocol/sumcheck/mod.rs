@@ -77,16 +77,17 @@ mod test {
             let output_point = &random_value_bank[..layer_mle.num_vars()];
             let claimed_sum = layer_mle.evaluate(output_point);
 
-            let layer_proving_info = circuit
-                .generate_layer_proving_info(i)
-                .extract_subsets(&circuit_evals);
+            let layer_proving_info = circuit.generate_layer_proving_info(i);
+
+            let layer_proving_info_with_subset =
+                layer_proving_info.clone().extract_subsets(&circuit_evals);
 
             let mut prover_transcript = Transcript::<F, E>::init();
 
             let sumcheck_proof = prove_sumcheck_layer(
                 claimed_sum,
                 output_point,
-                &layer_proving_info,
+                &layer_proving_info_with_subset,
                 &mut prover_transcript,
             );
 
@@ -97,7 +98,13 @@ mod test {
                 &mut verifier_transcript,
             );
 
-            assert!(matches!(verification_result, (_, _)));
+            // generate prover hints for oracle check
+            let hints = layer_proving_info_with_subset.eval_subsets(&verification_result.1);
+
+            // perform oracle check
+            let layer_eval = layer_proving_info.eval(output_point, &hints, &verification_result.1);
+
+            assert_eq!(layer_eval, Fields::Extension(verification_result.0));
         }
     }
 }

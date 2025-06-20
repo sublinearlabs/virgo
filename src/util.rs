@@ -1,4 +1,5 @@
-// use libra::utils::{build_phase_one_libra_sumcheck_poly, generate_eq, initialize_phase_one};
+use std::iter::once;
+
 use p3_field::{ExtensionField, Field};
 use poly::{
     Fields, MultilinearExtension,
@@ -53,6 +54,54 @@ impl LayerProvingInfo {
             mul_subsets: self.mul_subsets,
         }
     }
+
+    #[allow(dead_code)]
+    /// Evaluates the layer equation given concrete hints for the subset evaluations
+    pub(crate) fn eval<F: Field, E: ExtensionField<F>>(
+        &self,
+        eval_point: &[Fields<F, E>],
+        hints: &[Fields<F, E>],
+        b_c_points: &[Fields<F, E>],
+    ) -> Fields<F, E> {
+        // ensures we have evaluations for all subsets
+        // +1 because we need two evaluations for V_{i+1}
+        debug_assert_eq!(self.add_subsets.len() + 1, hints.len());
+
+        // determine the number of variables for each subset
+        // this determines how we partition the challenge points
+        let subset_n_vars = self
+            .v_subset_instruction
+            .iter()
+            .map(|subset| n_vars_from_len(subset.len()))
+            .collect::<Vec<_>>();
+
+        // partition challenges
+        let (b_points, c_points) = (
+            &b_c_points[..subset_n_vars[0]],
+            &b_c_points[subset_n_vars[0]..],
+        );
+
+        // generate eq tables
+        let igz = generate_eq(eval_point);
+        let iux = generate_eq(b_points);
+
+        let mut evaluation = Fields::Base(F::zero());
+
+        for (i, hint) in hints.iter().skip(1).enumerate() {
+            let c_table = generate_eq(&c_points[..subset_n_vars[i]]);
+            let floating_prod: Fields<F, E> =
+                c_points[subset_n_vars[i]..].iter().cloned().product();
+
+            // eval current add_i and mul_i
+            let add_eval = eval_sparse_entry(&self.add_subsets[i], &igz, &iux, &c_table);
+            let mul_eval = eval_sparse_entry(&self.mul_subsets[i], &igz, &iux, &c_table);
+
+            evaluation +=
+                floating_prod * (add_eval * (hints[0] + *hint) + mul_eval * hints[0] * *hint);
+        }
+
+        evaluation
+    }
 }
 
 /// Represents components needed to perform sumcheck for the `GeneralCircuit`
@@ -67,15 +116,43 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
 }
 
-#[allow(dead_code)]
+impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
+    #[allow(dead_code)]
+    /// Evaluates all subsets at a given point
+    /// subsets only take up to num_var points
+    pub(crate) fn eval_subsets(&self, eval_point: &[Fields<F, E>]) -> Vec<Fields<F, E>> {
+        // convert subsets to polynomials
+        let subset_polys = self
+            .v_subsets
+            .iter()
+            .map(|p| {
+                MultilinearPoly::new_extend_to_power_of_two(p.to_vec(), Fields::Base(F::zero()))
+            })
+            .collect::<Vec<_>>();
+
+        let (b_points, c_points) = (
+            &eval_point[..subset_polys[0].num_vars()],
+            &eval_point[subset_polys[0].num_vars()..],
+        );
+
+        let b_eval = subset_polys[0].evaluate(b_points);
+
+        let c_evals = subset_polys
+            .iter()
+            .map(|poly| poly.evaluate(&c_points[..poly.num_vars()]));
+
+        once(b_eval).chain(c_evals).collect()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     r: Vec<Fields<F, E>>,
+    #[allow(dead_code)]
     eval: Fields<F, E>,
     instruction: Vec<(usize, usize)>,
 }
 
-#[allow(dead_code)]
 pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
     alphas: &[Fields<F, E>],
     subclaims: &[Subclaim<F, E>],
@@ -128,6 +205,31 @@ pub(crate) fn push_index<T: PartialEq>(container: &mut Vec<T>, item: T) -> usize
     }
 }
 
+/// Determine the n_vars given the len of a vector
+fn n_vars_from_len(len: usize) -> usize {
+    assert_ne!(len, 0);
+    if len == 1 {
+        1
+    } else {
+        len.next_power_of_two().ilog2() as usize
+    }
+}
+
+/// Memory efficient evaluation of a sparse polynomial
+/// after all evaluations have been extracted into eq polynomials
+fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
+    sparse_entry: &[[usize; 3]],
+    igz: &[Fields<F, E>],
+    iux: &[Fields<F, E>],
+    c_table: &[Fields<F, E>],
+) -> Fields<F, E> {
+    let mut eval = Fields::Base(F::zero());
+    for [z, x, y] in sparse_entry {
+        eval += igz[*z] * iux[*x] * c_table[*y];
+    }
+    eval
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;
@@ -144,7 +246,7 @@ mod tests {
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::util::{Subclaim, build_agi, n_to_1_folding};
+    use crate::util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len};
 
     #[test]
     fn test_n_to_1_folding() {
@@ -221,5 +323,12 @@ mod tests {
         let mut verifier_transcript = Transcript::<F, E>::init();
 
         let _verify = S::verify_partial(&proof.unwrap(), &mut verifier_transcript);
+    }
+
+    #[test]
+    fn test_n_vars_from_len() {
+        assert_eq!(n_vars_from_len(1), 1);
+        assert_eq!(n_vars_from_len(2), 1);
+        assert_eq!(n_vars_from_len(5), 3);
     }
 }

@@ -1,4 +1,4 @@
-use crate::util::{push_index, GateAddr, LayerId, LayerProvingInfo};
+use crate::util::{GateAddr, LayerId, LayerProvingInfo, push_index};
 
 #[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings
@@ -189,7 +189,7 @@ pub(crate) mod test {
         circuit_builder::Builder,
         util::LayerProvingInfo,
     };
-    use p3_field::{extension::BinomialExtensionField, AbstractField};
+    use p3_field::{AbstractField, extension::BinomialExtensionField};
     use p3_goldilocks::Goldilocks as F;
     use poly::Fields;
 

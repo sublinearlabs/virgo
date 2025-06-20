@@ -2,10 +2,10 @@ use std::iter::once;
 
 use p3_field::{ExtensionField, Field};
 use poly::{
+    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
-    Fields, MultilinearExtension,
 };
 use sum_check::interface::SumCheckInterface;
 
@@ -296,19 +296,19 @@ fn subclaim_to_hints<F: Field, E: ExtensionField<F>>(
 mod tests {
     use std::vec;
 
-    use p3_field::{extension::BinomialExtensionField, AbstractField};
+    use p3_field::{AbstractField, extension::BinomialExtensionField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
+        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
     };
-    use sum_check::{interface::SumCheckInterface, SumCheck};
+    use sum_check::{SumCheck, interface::SumCheckInterface};
     use transcript::Transcript;
 
     type F = Mersenne31;
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::util::{build_agi, n_to_1_folding, n_vars_from_len, Subclaim};
+    use crate::util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len};
 
     #[test]
     fn test_n_to_1_folding() {
@@ -327,7 +327,7 @@ mod tests {
             Fields::from_u32_vec(vec![1, 3, 5]),
             Fields::from_u32(0),
         );
-        let c1_subset_instruction = vec![(0, 0), (1, 2), (2, 4)];
+        let c1_subset_instruction = vec![0, 2, 4];
         let c1_r = &all_challenges[..c1_subset_poly.num_vars()];
         let c1_eval = c1_subset_poly.evaluate(c1_r);
         let c1_subclaim = Subclaim {
@@ -340,7 +340,7 @@ mod tests {
             Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6]),
             Fields::from_u32(0),
         );
-        let c2_subset_instruction = vec![(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)];
+        let c2_subset_instruction = vec![0, 1, 2, 3, 4, 5];
         let c2_r = &all_challenges[..c2_subset_poly.num_vars()];
         let c2_eval = c2_subset_poly.evaluate(c2_r);
         let c2_subclaim = Subclaim {
@@ -353,7 +353,7 @@ mod tests {
             Fields::from_u32_vec(vec![2, 3, 6]),
             Fields::from_u32(0),
         );
-        let c3_subset_instruction = vec![(0, 1), (1, 2), (2, 5)];
+        let c3_subset_instruction = vec![1, 2, 5];
         let c3_r = &all_challenges[..c3_subset_poly.num_vars()];
         let c3_eval = c3_subset_poly.evaluate(c3_r);
         let c3_subclaim = Subclaim {

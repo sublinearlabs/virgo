@@ -1,4 +1,5 @@
 pub mod sumcheck;
+pub mod verifier;
 
 use p3_field::{ExtensionField, Field};
 use poly::Fields;

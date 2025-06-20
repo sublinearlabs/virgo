@@ -1,9 +1,9 @@
 use p3_field::{ExtensionField, Field};
 use poly::{
-    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
+    Fields, MultilinearExtension,
 };
 use sum_check::interface::SumCheckInterface;
 
@@ -100,31 +100,6 @@ impl LayerProvingInfo {
     }
 }
 
-/// Determine the n_vars given the len of a vector
-fn n_vars_from_len(len: usize) -> usize {
-    assert_ne!(len, 0);
-    if len == 1 {
-        1
-    } else {
-        len.next_power_of_two().ilog2() as usize
-    }
-}
-
-/// Memory efficient evaluation of a sparse polynomial
-/// after all evaluations have been extracted into eq polynomials
-fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
-    sparse_entry: &[[usize; 3]],
-    igz: &[Fields<F, E>],
-    iux: &[Fields<F, E>],
-    c_table: &[Fields<F, E>],
-) -> Fields<F, E> {
-    let mut eval = Fields::Base(F::zero());
-    for [z, x, y] in sparse_entry {
-        eval += igz[*z] * iux[*x] * c_table[*y];
-    }
-    eval
-}
-
 /// Represents components needed to perform sumcheck for the `GeneralCircuit`
 /// with concrete subset values
 #[derive(Debug, Clone)]
@@ -135,6 +110,21 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,
     /// Subset mul i's based on subset v's
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
+}
+
+impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
+    /// Evaluates all subsets at a given point
+    /// subsets only take up to num_var points
+    fn eval_subsets(&self, eval_point: &[Fields<F, E>]) -> Vec<Fields<F, E>> {
+        // convert subsets to polynomials
+        let subset_polys = self.v_subsets.iter().map(|p| {
+            MultilinearPoly::new_extend_to_power_of_two(p.to_vec(), Fields::Base(F::zero()))
+        });
+
+        subset_polys
+            .map(|poly| poly.evaluate(&eval_point[..poly.num_vars()]))
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -196,23 +186,48 @@ pub(crate) fn push_index<T: PartialEq>(container: &mut Vec<T>, item: T) -> usize
     }
 }
 
+/// Determine the n_vars given the len of a vector
+fn n_vars_from_len(len: usize) -> usize {
+    assert_ne!(len, 0);
+    if len == 1 {
+        1
+    } else {
+        len.next_power_of_two().ilog2() as usize
+    }
+}
+
+/// Memory efficient evaluation of a sparse polynomial
+/// after all evaluations have been extracted into eq polynomials
+fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
+    sparse_entry: &[[usize; 3]],
+    igz: &[Fields<F, E>],
+    iux: &[Fields<F, E>],
+    c_table: &[Fields<F, E>],
+) -> Fields<F, E> {
+    let mut eval = Fields::Base(F::zero());
+    for [z, x, y] in sparse_entry {
+        eval += igz[*z] * iux[*x] * c_table[*y];
+    }
+    eval
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;
 
-    use p3_field::{AbstractField, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
+        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
     };
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
 
     type F = Mersenne31;
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len};
+    use crate::util::{build_agi, n_to_1_folding, n_vars_from_len, Subclaim};
 
     #[test]
     fn test_n_to_1_folding() {

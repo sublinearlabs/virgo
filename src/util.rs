@@ -2,10 +2,10 @@ use std::iter::once;
 
 use p3_field::{ExtensionField, Field};
 use poly::{
-    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
+    Fields, MultilinearExtension,
 };
 use sum_check::interface::SumCheckInterface;
 
@@ -50,6 +50,7 @@ impl LayerProvingInfo {
 
         LayerProvingInfoWithSubset {
             v_subsets: concrete_subset_values,
+            v_subset_instruction: self.v_subset_instruction,
             add_subsets: self.add_subsets,
             mul_subsets: self.mul_subsets,
         }
@@ -110,6 +111,9 @@ impl LayerProvingInfo {
 pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     /// Subset values v for some given layer id
     pub(crate) v_subsets: Vec<Vec<Fields<F, E>>>,
+    /// Instructions on how to extract the v subset values
+    /// from an evaluation vector
+    pub(crate) v_subset_instruction: Vec<Vec<usize>>,
     /// Subset add i's based on subset v's
     pub(crate) add_subsets: Vec<Vec<[usize; 3]>>,
     /// Subset mul i's based on subset v's
@@ -234,19 +238,19 @@ fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
 mod tests {
     use std::vec;
 
-    use p3_field::{AbstractField, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
+        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
     };
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
 
     type F = Mersenne31;
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len};
+    use crate::util::{build_agi, n_to_1_folding, n_vars_from_len, Subclaim};
 
     #[test]
     fn test_n_to_1_folding() {

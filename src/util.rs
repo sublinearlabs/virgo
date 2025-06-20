@@ -285,6 +285,13 @@ fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
     eval
 }
 
+/// Extract the evaluations from a collection of subclaims
+fn subclaim_to_hints<F: Field, E: ExtensionField<F>>(
+    subclaims: &[Subclaim<F, E>],
+) -> Vec<Fields<F, E>> {
+    subclaims.iter().map(|s| s.eval).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;

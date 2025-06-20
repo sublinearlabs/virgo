@@ -1,4 +1,3 @@
-// use libra::utils::{build_phase_one_libra_sumcheck_poly, generate_eq, initialize_phase_one};
 use p3_field::{ExtensionField, Field};
 use poly::{
     mle::MultilinearPoly,
@@ -52,6 +51,23 @@ impl LayerProvingInfo {
             mul_subsets: self.mul_subsets,
         }
     }
+
+    pub(crate) fn eval<F: Field, E: ExtensionField<F>>(
+        &self,
+        eval_point: &[Fields<F, E>],
+        hints: &[Fields<F, E>],
+        challenges: &[Fields<F, E>],
+    ) -> Fields<F, E> {
+        // ensures we have evaluations for all subsets
+        // +1 because we need two evaluations for V_{i+1}
+        debug_assert_eq!(self.add_subsets.len() + 1, hints.len());
+
+        // we never evaluate anything
+        // we could abstract into a function that evaluates the padded sparse entry
+        // given the challenges and the Igz, Iux
+        //
+        todo!()
+    }
 }
 
 /// Represents components needed to perform sumcheck for the `GeneralCircuit`
@@ -66,13 +82,6 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
     pub(crate) mul_subsets: Vec<Vec<[usize; 3]>>,
 }
 
-impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
-    pub(crate) fn eval(&self, hints: &[Fields<F, E>], challenges: &[Fields<F, E>]) -> Fields<F, E> {
-        todo!()
-    }
-}
-
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     r: Vec<Fields<F, E>>,
@@ -80,7 +89,6 @@ pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     instruction: Vec<(usize, usize)>,
 }
 
-#[allow(dead_code)]
 pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
     alphas: &[Fields<F, E>],
     subclaims: &[Subclaim<F, E>],

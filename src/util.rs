@@ -70,15 +70,43 @@ impl LayerProvingInfo {
             .map(|subset| n_vars_from_len(subset.len()))
             .collect::<Vec<_>>();
 
-        // generate eq tables
+        // partition challenges
         let (b_challenges, c_challenges) = (
             &challenges[..subset_n_vars[0]],
             &challenges[subset_n_vars[0]..],
         );
+
+        // generate eq tables
         let igz = generate_eq(eval_point);
         let iux = generate_eq(b_challenges);
 
-        todo!()
+        let mut evaluation = Fields::Base(F::zero());
+
+        // focusing on add what does one do?
+        // one of the hints is fixed for all iterations
+        // hence we can zip the subset with the rest of the hints
+        for (i, hint) in hints.iter().skip(1).enumerate() {
+            let c_table = generate_eq(&c_challenges[..subset_n_vars[i]]);
+            let floating_prod: Fields<F, E> =
+                c_challenges[subset_n_vars[i]..].iter().cloned().product();
+
+            // eval the current add poly
+            let mut add_eval = Fields::Base(F::zero());
+            for [z, x, y] in &self.add_subsets[i] {
+                add_eval += igz[*z] * iux[*x] * c_table[*y];
+            }
+
+            // eval the current mul poly
+            let mut mul_eval = Fields::Base(F::zero());
+            for [z, x, y] in &self.mul_subsets[i] {
+                mul_eval += igz[*z] * iux[*x] * c_table[*y];
+            }
+
+            evaluation +=
+                floating_prod * (add_eval * (hints[0] + *hint) + mul_eval * hints[0] * *hint);
+        }
+
+        evaluation
     }
 }
 

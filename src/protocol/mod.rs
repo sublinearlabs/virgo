@@ -1,4 +1,3 @@
-pub mod prover;
 pub mod sumcheck;
 
 use p3_field::{ExtensionField, Field};

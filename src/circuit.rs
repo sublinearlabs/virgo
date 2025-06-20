@@ -1,4 +1,4 @@
-use crate::util::{GateAddr, LayerId, LayerProvingInfo, push_index};
+use crate::util::{push_index, GateAddr, LayerId, LayerProvingInfo};
 
 #[derive(Debug, Clone)]
 /// Represents a circuit with gates that can have arbitrary wirings
@@ -43,7 +43,7 @@ impl GeneralCircuit {
     pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
         // given some global layer id after the target id
         // converts that to the relative id from the target id
-        // example: if target_id = i, then layer i + 1 will have
+        // example: if target_id = i, then layer i + 1 will hav
         // relative id = 0
         let norm_layer_id = |id: LayerId| id - layer_id - 1;
 
@@ -189,7 +189,7 @@ pub(crate) mod test {
         circuit_builder::Builder,
         util::LayerProvingInfo,
     };
-    use p3_field::{AbstractField, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField};
     use p3_goldilocks::Goldilocks as F;
     use poly::Fields;
 

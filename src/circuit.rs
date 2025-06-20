@@ -43,7 +43,7 @@ impl GeneralCircuit {
     pub(crate) fn generate_layer_proving_info(&self, layer_id: LayerId) -> LayerProvingInfo {
         // given some global layer id after the target id
         // converts that to the relative id from the target id
-        // example: if target_id = i, then layer i + 1 will hav
+        // example: if target_id = i, then layer i + 1 will have
         // relative id = 0
         let norm_layer_id = |id: LayerId| id - layer_id - 1;
 

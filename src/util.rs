@@ -2,10 +2,10 @@ use std::iter::once;
 
 use p3_field::{ExtensionField, Field};
 use poly::{
-    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
     vpoly::VPoly,
+    Fields, MultilinearExtension,
 };
 use sum_check::interface::SumCheckInterface;
 
@@ -165,7 +165,7 @@ impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
     #[allow(dead_code)]
     /// Evaluates all subsets at a given point
     /// subsets only take up to num_var points
-    pub(crate) fn eval_subsets(&self, eval_point: &[Fields<F, E>]) -> Vec<Fields<F, E>> {
+    pub(crate) fn eval_subsets(&self, eval_point: &[Fields<F, E>]) -> Vec<Subclaim<F, E>> {
         // convert subsets to polynomials
         let subset_polys = self
             .v_subsets
@@ -181,12 +181,23 @@ impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
         );
 
         let b_eval = subset_polys[0].evaluate(b_points);
+        let b_subclaim = Subclaim::new(
+            b_points.to_vec(),
+            b_eval,
+            self.v_subset_instruction[0].clone(),
+        );
 
-        let c_evals = subset_polys
+        debug_assert_eq!(subset_polys.len(), self.v_subset_instruction.len());
+        let c_subclaims = subset_polys
             .iter()
-            .map(|poly| poly.evaluate(&c_points[..poly.num_vars()]));
+            .zip(self.v_subset_instruction.clone())
+            .map(|(poly, instruction)| {
+                let eval_point = &c_points[..poly.num_vars()];
+                let eval = poly.evaluate(eval_point);
+                Subclaim::new(eval_point.to_vec(), eval, instruction)
+            });
 
-        once(b_eval).chain(c_evals).collect()
+        once(b_subclaim).chain(c_subclaims).collect()
     }
 }
 
@@ -296,12 +307,12 @@ fn subclaim_to_hints<F: Field, E: ExtensionField<F>>(
 mod tests {
     use std::vec;
 
-    use p3_field::{AbstractField, Field, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField, Field};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
+        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
     };
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
 
     type F = Mersenne31;
@@ -310,7 +321,7 @@ mod tests {
 
     use crate::{
         circuit::test::circuit_1,
-        util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len, subclaim_to_hints},
+        util::{build_agi, n_to_1_folding, n_vars_from_len, subclaim_to_hints, Subclaim},
     };
 
     #[test]

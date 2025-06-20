@@ -171,7 +171,7 @@ mod tests {
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::util::{build_agi, n_to_1_folding, Subclaim};
+    use crate::util::{build_agi, n_to_1_folding, n_vars_from_len, Subclaim};
 
     #[test]
     fn test_n_to_1_folding() {
@@ -248,5 +248,12 @@ mod tests {
         let mut verifier_transcript = Transcript::<F, E>::init();
 
         let _verify = S::verify_partial(&proof.unwrap(), &mut verifier_transcript);
+    }
+
+    #[test]
+    fn test_n_vars_from_len() {
+        assert_eq!(n_vars_from_len(1), 1);
+        assert_eq!(n_vars_from_len(2), 1);
+        assert_eq!(n_vars_from_len(5), 3);
     }
 }

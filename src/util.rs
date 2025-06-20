@@ -82,25 +82,14 @@ impl LayerProvingInfo {
 
         let mut evaluation = Fields::Base(F::zero());
 
-        // focusing on add what does one do?
-        // one of the hints is fixed for all iterations
-        // hence we can zip the subset with the rest of the hints
         for (i, hint) in hints.iter().skip(1).enumerate() {
             let c_table = generate_eq(&c_challenges[..subset_n_vars[i]]);
             let floating_prod: Fields<F, E> =
                 c_challenges[subset_n_vars[i]..].iter().cloned().product();
 
-            // eval the current add poly
-            let mut add_eval = Fields::Base(F::zero());
-            for [z, x, y] in &self.add_subsets[i] {
-                add_eval += igz[*z] * iux[*x] * c_table[*y];
-            }
-
-            // eval the current mul poly
-            let mut mul_eval = Fields::Base(F::zero());
-            for [z, x, y] in &self.mul_subsets[i] {
-                mul_eval += igz[*z] * iux[*x] * c_table[*y];
-            }
+            // eval current add_i and mul_i
+            let add_eval = eval_sparse_entry(&self.add_subsets[i], &igz, &iux, &c_table);
+            let mul_eval = eval_sparse_entry(&self.mul_subsets[i], &igz, &iux, &c_table);
 
             evaluation +=
                 floating_prod * (add_eval * (hints[0] + *hint) + mul_eval * hints[0] * *hint);
@@ -118,6 +107,20 @@ fn n_vars_from_len(len: usize) -> usize {
     } else {
         len.next_power_of_two().ilog2() as usize
     }
+}
+
+// TODO: add documentation
+fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
+    sparse_entry: &[[usize; 3]],
+    igz: &[Fields<F, E>],
+    iux: &[Fields<F, E>],
+    c_table: &[Fields<F, E>],
+) -> Fields<F, E> {
+    let mut eval = Fields::Base(F::zero());
+    for [z, x, y] in sparse_entry {
+        eval += igz[*z] * iux[*x] * c_table[*y];
+    }
+    eval
 }
 
 /// Represents components needed to perform sumcheck for the `GeneralCircuit`

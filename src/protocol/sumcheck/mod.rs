@@ -4,7 +4,7 @@ mod phase_two;
 use p3_field::{ExtensionField, Field, PrimeField32};
 use phase_one::prove_phase_one;
 use phase_two::prove_phase_two;
-use poly::{Fields, utils::generate_eq};
+use poly::{utils::generate_eq, Fields};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -47,10 +47,10 @@ fn merge_sumcheck_proofs<F: Field, E: ExtensionField<F>>(
 #[cfg(test)]
 mod test {
     use crate::{circuit::test::circuit_1, protocol::sumcheck::prove_sumcheck_layer};
-    use p3_field::{AbstractField, ExtensionField, Field, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField, ExtensionField, Field};
     use p3_mersenne_31::Mersenne31 as F;
-    use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
     type E = BinomialExtensionField<F, 3>;
 
@@ -77,16 +77,17 @@ mod test {
             let output_point = &random_value_bank[..layer_mle.num_vars()];
             let claimed_sum = layer_mle.evaluate(output_point);
 
-            let layer_proving_info = circuit
-                .generate_layer_proving_info(i)
-                .extract_subsets(&circuit_evals);
+            let layer_proving_info = circuit.generate_layer_proving_info(i);
+
+            let layer_proving_info_with_subset =
+                layer_proving_info.clone().extract_subsets(&circuit_evals);
 
             let mut prover_transcript = Transcript::<F, E>::init();
 
             let sumcheck_proof = prove_sumcheck_layer(
                 claimed_sum,
                 output_point,
-                &layer_proving_info,
+                &layer_proving_info_with_subset,
                 &mut prover_transcript,
             );
 
@@ -97,7 +98,13 @@ mod test {
                 &mut verifier_transcript,
             );
 
-            assert!(matches!(verification_result, (_, _)));
+            // generate prover hints for oracle check
+            let hints = layer_proving_info_with_subset.eval_subsets(&verification_result.1);
+
+            // perform oracle check
+            let layer_eval = layer_proving_info.eval(output_point, &hints, &verification_result.1);
+
+            assert_eq!(layer_eval, Fields::Extension(verification_result.0));
         }
     }
 }

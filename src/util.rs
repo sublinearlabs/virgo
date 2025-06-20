@@ -1,3 +1,5 @@
+use std::iter::once;
+
 use p3_field::{ExtensionField, Field};
 use poly::{
     mle::MultilinearPoly,
@@ -115,15 +117,28 @@ pub(crate) struct LayerProvingInfoWithSubset<F: Field, E: ExtensionField<F>> {
 impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
     /// Evaluates all subsets at a given point
     /// subsets only take up to num_var points
-    fn eval_subsets(&self, eval_point: &[Fields<F, E>]) -> Vec<Fields<F, E>> {
+    pub(crate) fn eval_subsets(&self, eval_point: &[Fields<F, E>]) -> Vec<Fields<F, E>> {
         // convert subsets to polynomials
-        let subset_polys = self.v_subsets.iter().map(|p| {
-            MultilinearPoly::new_extend_to_power_of_two(p.to_vec(), Fields::Base(F::zero()))
-        });
+        let subset_polys = self
+            .v_subsets
+            .iter()
+            .map(|p| {
+                MultilinearPoly::new_extend_to_power_of_two(p.to_vec(), Fields::Base(F::zero()))
+            })
+            .collect::<Vec<_>>();
 
-        subset_polys
-            .map(|poly| poly.evaluate(&eval_point[..poly.num_vars()]))
-            .collect()
+        let (b_points, c_points) = (
+            &eval_point[..subset_polys[0].num_vars()],
+            &eval_point[subset_polys[0].num_vars()..],
+        );
+
+        let b_eval = subset_polys[0].evaluate(&b_points);
+
+        let c_evals = subset_polys
+            .iter()
+            .map(|poly| poly.evaluate(&c_points[..poly.num_vars()]));
+
+        once(b_eval).chain(c_evals).collect()
     }
 }
 

@@ -5,6 +5,6 @@ use poly::Fields;
 use sum_check::primitives::SumCheckProof;
 
 pub struct VirgoProof<F: Field, E: ExtensionField<F>> {
-    layer_sumchecks: (SumCheckProof<F, E>, Vec<Fields<F, E>>),
-    folding_sumchecks: (SumCheckProof<F, E>, Fields<F, E>),
+    pub layer_sumchecks: (SumCheckProof<F, E>, Vec<Fields<F, E>>),
+    pub folding_sumchecks: (SumCheckProof<F, E>, Fields<F, E>),
 }

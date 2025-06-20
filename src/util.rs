@@ -296,7 +296,7 @@ fn subclaim_to_hints<F: Field, E: ExtensionField<F>>(
 mod tests {
     use std::vec;
 
-    use p3_field::{AbstractField, extension::BinomialExtensionField};
+    use p3_field::{AbstractField, Field, extension::BinomialExtensionField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
         Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
@@ -308,7 +308,10 @@ mod tests {
     type E = BinomialExtensionField<F, 3>;
     type S = SumCheck<F, E, VPoly<F, E>>;
 
-    use crate::util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len};
+    use crate::{
+        circuit::test::circuit_1,
+        util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len, subclaim_to_hints},
+    };
 
     #[test]
     fn test_n_to_1_folding() {
@@ -392,5 +395,37 @@ mod tests {
         assert_eq!(n_vars_from_len(1), 1);
         assert_eq!(n_vars_from_len(2), 1);
         assert_eq!(n_vars_from_len(5), 3);
+    }
+
+    #[test]
+    fn test_subclaim_hint_loop() {
+        let circuit = circuit_1();
+        let output_proving_info = circuit.generate_layer_proving_info(0);
+        assert_eq!(output_proving_info.add_subsets.len(), 3);
+
+        // generate 4 random hints
+        // 4 because next layer needs 2 hints
+        let hints = Fields::<F, E>::from_u32_vec(vec![1, 2, 3, 4]);
+
+        // use hints to generate subclaim
+        let subclaims = output_proving_info.hints_to_subclaims(
+            &hints,
+            &Fields::from_u32_vec(vec![1, 2, 3, 4, 5, 6, 7, 8, 9]),
+        );
+        assert_eq!(subclaims.len(), 4);
+
+        // check for correct eval use
+        assert_eq!(subclaims[0].eval, Fields::from_u32(1));
+        assert_eq!(subclaims[1].eval, Fields::from_u32(2));
+        assert_eq!(subclaims[2].eval, Fields::from_u32(3));
+        assert_eq!(subclaims[3].eval, Fields::from_u32(4));
+
+        // ensure that each subclaim takes the right number of variables
+        assert_eq!(subclaims[0].r, Fields::from_u32_vec(vec![1]));
+        assert_eq!(subclaims[1].r, Fields::from_u32_vec(vec![2]));
+        assert_eq!(subclaims[2].r, Fields::from_u32_vec(vec![2]));
+        assert_eq!(subclaims[3].r, Fields::from_u32_vec(vec![2]));
+
+        assert_eq!(subclaim_to_hints(&subclaims), hints);
     }
 }

@@ -46,7 +46,7 @@ fn merge_sumcheck_proofs<F: Field, E: ExtensionField<F>>(
 
 #[cfg(test)]
 mod test {
-    use crate::{circuit::test::circuit_1, sumcheck::prove_sumcheck_layer};
+    use crate::{circuit::test::circuit_1, protocol::sumcheck::prove_sumcheck_layer};
     use p3_field::{AbstractField, ExtensionField, Field, extension::BinomialExtensionField};
     use p3_mersenne_31::Mersenne31 as F;
     use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};

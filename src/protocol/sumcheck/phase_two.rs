@@ -203,7 +203,8 @@ mod tests {
     use p3_goldilocks::Goldilocks as F;
     use poly::Fields;
 
-    use crate::sumcheck::phase_two::merge_round_messages;
+    use crate::protocol::sumcheck::phase_two::merge_round_messages;
+
     type E = BinomialExtensionField<F, 2>;
 
     fn to_fields<F: Field, E: ExtensionField<F>>(values: Vec<usize>) -> Vec<Fields<F, E>> {

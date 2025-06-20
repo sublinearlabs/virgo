@@ -103,6 +103,47 @@ impl LayerProvingInfo {
 
         evaluation
     }
+
+    // TODO: add documentation
+    pub(crate) fn hints_to_subclaims<F: Field, E: ExtensionField<F>>(
+        &self,
+        hints: &[Fields<F, E>],
+        b_c_points: &[Fields<F, E>],
+    ) -> Vec<Subclaim<F, E>> {
+        // ensures we have evaluations for all subsets
+        // +1 because we need two evaluations for V_{i+1}
+        debug_assert_eq!(self.add_subsets.len() + 1, hints.len());
+
+        // determine the number of variables for each subset
+        // this determines how we partition the challenge points
+        let subset_n_vars = self
+            .v_subset_instruction
+            .iter()
+            .map(|subset| n_vars_from_len(subset.len()))
+            .collect::<Vec<_>>();
+
+        // partition challenges
+        let (b_points, c_points) = (
+            &b_c_points[..subset_n_vars[0]],
+            &b_c_points[subset_n_vars[0]..],
+        );
+
+        let b_subclaim = Subclaim::new(
+            b_points.to_vec(),
+            hints[0],
+            self.v_subset_instruction[0].clone(),
+        );
+
+        let c_subclaims = subset_n_vars.iter().enumerate().map(|(i, n_vars)| {
+            Subclaim::new(
+                c_points[..*n_vars].to_vec(),
+                hints[i + 1],
+                self.v_subset_instruction[i].clone(),
+            )
+        });
+
+        once(b_subclaim).chain(c_subclaims).collect()
+    }
 }
 
 /// Represents components needed to perform sumcheck for the `GeneralCircuit`
@@ -154,7 +195,17 @@ pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
     r: Vec<Fields<F, E>>,
     #[allow(dead_code)]
     eval: Fields<F, E>,
-    instruction: Vec<(usize, usize)>,
+    instruction: Vec<usize>,
+}
+
+impl<F: Field, E: ExtensionField<F>> Subclaim<F, E> {
+    fn new(eval_point: Vec<Fields<F, E>>, eval: Fields<F, E>, instruction: Vec<usize>) -> Self {
+        Self {
+            r: eval_point,
+            eval,
+            instruction,
+        }
+    }
 }
 
 pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
@@ -168,8 +219,8 @@ pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
         let subclaim = &subclaims[k];
         let igz = generate_eq(&subclaim.r);
 
-        for (t, x) in &subclaim.instruction {
-            res[*x] += alphas[k] * igz[*t];
+        for (t, x) in subclaim.instruction.iter().enumerate() {
+            res[*x] += alphas[k] * igz[t];
         }
     }
 

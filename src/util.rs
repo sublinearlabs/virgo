@@ -70,10 +70,14 @@ impl LayerProvingInfo {
             .map(|subset| n_vars_from_len(subset.len()))
             .collect::<Vec<_>>();
 
-        // I need a clean way to partition
+        // generate eq tables
+        let (b_challenges, c_challenges) = (
+            &challenges[..subset_n_vars[0]],
+            &challenges[subset_n_vars[0]..],
+        );
+        let igz = generate_eq(eval_point);
+        let iux = generate_eq(b_challenges);
 
-        // I need a quick way to know the size of x
-        //
         todo!()
     }
 }

@@ -4,7 +4,7 @@ mod phase_two;
 use p3_field::{ExtensionField, Field, PrimeField32};
 use phase_one::prove_phase_one;
 use phase_two::prove_phase_two;
-use poly::{Fields, utils::generate_eq};
+use poly::{utils::generate_eq, Fields};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -46,11 +46,14 @@ fn merge_sumcheck_proofs<F: Field, E: ExtensionField<F>>(
 
 #[cfg(test)]
 mod test {
-    use crate::{circuit::test::circuit_1, protocol::sumcheck::prove_sumcheck_layer};
-    use p3_field::{AbstractField, ExtensionField, Field, extension::BinomialExtensionField};
+    use crate::{
+        circuit::test::circuit_1, protocol::sumcheck::prove_sumcheck_layer,
+        util::subclaims_to_hints,
+    };
+    use p3_field::{extension::BinomialExtensionField, AbstractField, ExtensionField, Field};
     use p3_mersenne_31::Mersenne31 as F;
-    use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
     type E = BinomialExtensionField<F, 3>;
 
@@ -99,7 +102,8 @@ mod test {
             );
 
             // generate prover hints for oracle check
-            let hints = layer_proving_info_with_subset.eval_subsets(&verification_result.1);
+            let subclaims = layer_proving_info_with_subset.eval_subsets(&verification_result.1);
+            let hints = subclaims_to_hints(&subclaims);
 
             // perform oracle check
             let layer_eval = layer_proving_info.eval(output_point, &hints, &verification_result.1);

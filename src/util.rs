@@ -297,7 +297,7 @@ fn eval_sparse_entry<F: Field, E: ExtensionField<F>>(
 }
 
 /// Extract the evaluations from a collection of subclaims
-fn subclaim_to_hints<F: Field, E: ExtensionField<F>>(
+pub(crate) fn subclaims_to_hints<F: Field, E: ExtensionField<F>>(
     subclaims: &[Subclaim<F, E>],
 ) -> Vec<Fields<F, E>> {
     subclaims.iter().map(|s| s.eval).collect()
@@ -321,7 +321,7 @@ mod tests {
 
     use crate::{
         circuit::test::circuit_1,
-        util::{build_agi, n_to_1_folding, n_vars_from_len, subclaim_to_hints, Subclaim},
+        util::{build_agi, n_to_1_folding, n_vars_from_len, subclaims_to_hints, Subclaim},
     };
 
     #[test]
@@ -437,6 +437,6 @@ mod tests {
         assert_eq!(subclaims[2].r, Fields::from_u32_vec(vec![2]));
         assert_eq!(subclaims[3].r, Fields::from_u32_vec(vec![2]));
 
-        assert_eq!(subclaim_to_hints(&subclaims), hints);
+        assert_eq!(subclaims_to_hints(&subclaims), hints);
     }
 }

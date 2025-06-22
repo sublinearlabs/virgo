@@ -1,5 +1,6 @@
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
 use crate::{
@@ -26,10 +27,10 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     output_mle.commit_to_transcript(transcript);
 
     // sample challenges for the output
-    let r = extension_to_fields(transcript.sample_n_challenges(output_mle.num_vars()));
+    let mut r = extension_to_fields(transcript.sample_n_challenges(output_mle.num_vars()));
 
     // get layer evaluation
-    let m = output_mle.evaluate(r.as_slice());
+    let mut m = output_mle.evaluate(r.as_slice());
 
     // what next?
     // need to prove the output layer
@@ -61,12 +62,26 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
 
         // sample alphas
         let alphas = extension_to_fields(transcript.sample_n_challenges(layer_subclaims[i].len()));
-        let folding_proof = n_to_1_folding(
+        let folding_proof: SumCheckProof<F, E> = n_to_1_folding(
             transcript,
             &alphas,
             &layer_subclaims[i],
             &evaluations[i + 1],
-        );
+        )
+        .unwrap();
+
+        // after generating the folding proof what is next??
+        // we have the challenges from the folding proof
+        // this is the point we are supposed to evaluate V_i at
+        // hence the last stem must be to set r and m to this new values
+        // once that is done we push to the submcheck proof
+
+        r = folding_proof.challenges;
+        m = MultilinearPoly::new_extend_to_power_of_two(
+            evaluations[i + 1].clone(),
+            Fields::from_u32(0),
+        )
+        .evaluate(&r);
     }
 
     todo!()

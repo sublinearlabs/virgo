@@ -2,7 +2,9 @@ use p3_field::{ExtensionField, Field, PackedValue, PrimeField32};
 use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
 use transcript::Transcript;
 
-use crate::{circuit::GeneralCircuit, protocol::sumcheck::prove_sumcheck_layer};
+use crate::{
+    circuit::GeneralCircuit, protocol::sumcheck::prove_sumcheck_layer, util::subclaims_to_hints,
+};
 
 use super::VirgoProof;
 use crate::util::Subclaim;
@@ -35,6 +37,14 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
             .extract_subsets(evaluations);
 
         let layer_sumcheck_proof = prove_sumcheck_layer(m, &r, &layer_proving_info, transcript);
+
+        // what do I do next after performing the sumcheck proof
+        // now I have access to a series of challenges
+        // these challenges should allow me generate the hints
+        // these hints will need to be added to the transcript
+
+        let subclaims = layer_proving_info.eval_subsets(&layer_sumcheck_proof.challenges);
+        let hints = subclaims_to_hints(&subclaims);
     }
 
     todo!()

@@ -1,5 +1,5 @@
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -74,6 +74,8 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         )
         .evaluate(&eval_point);
 
+        // append folding proof
+        transcript.observe_ext_element(&[eval.to_extension_field()]);
         proof.add_folding_proof(folding_proof, eval);
     }
 

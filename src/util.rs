@@ -2,11 +2,11 @@ use std::iter::once;
 
 use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{
+    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
-    Fields, MultilinearExtension,
 };
-use sum_check::{interface::SumCheckInterface, primitives::SumCheckProof, SumCheck};
+use sum_check::{SumCheck, interface::SumCheckInterface, primitives::SumCheckProof};
 use transcript::Transcript;
 
 /// Type alias for layer id
@@ -301,12 +301,12 @@ pub(crate) fn subclaims_to_hints<F: Field, E: ExtensionField<F>>(
 mod tests {
     use std::vec;
 
-    use p3_field::{extension::BinomialExtensionField, AbstractField};
+    use p3_field::{AbstractField, extension::BinomialExtensionField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
+        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
     };
-    use sum_check::{interface::SumCheckInterface, SumCheck};
+    use sum_check::{SumCheck, interface::SumCheckInterface};
     use transcript::Transcript;
 
     type F = Mersenne31;
@@ -315,7 +315,7 @@ mod tests {
 
     use crate::{
         circuit::test::circuit_1,
-        util::{build_agi, n_to_1_folding, n_vars_from_len, subclaims_to_hints, Subclaim},
+        util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len, subclaims_to_hints},
     };
 
     #[test]

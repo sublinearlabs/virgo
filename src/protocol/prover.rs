@@ -46,6 +46,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         let hints = subclaims_to_hints(&subclaims);
 
         // TODO: clean up this observation mechanism
+        //  there should be a way to just observe Fields
         transcript.observe_ext_element(
             &hints
                 .iter()
@@ -78,7 +79,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         proof.add_folding_proof(folding_proof, m);
     }
 
-    todo!()
+    proof
 }
 
 // TODO: add documentation

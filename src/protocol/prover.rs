@@ -36,8 +36,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
             .generate_layer_proving_info(i)
             .extract_subsets(evaluations);
 
-        // generate current layer sumcheck proof and
-        // generate oracle check hints
+        // prove layer sumcheck and generate oracle hints
         let layer_sumcheck_proof =
             prove_sumcheck_layer(eval, &eval_point, &layer_proving_info, transcript);
         let subclaims = layer_proving_info.eval_subsets(&layer_sumcheck_proof.challenges);

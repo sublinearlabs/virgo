@@ -5,12 +5,14 @@ use transcript::Transcript;
 use crate::circuit::GeneralCircuit;
 
 use super::VirgoProof;
+use crate::util::Subclaim;
 
 pub fn prove<F: Field, E: ExtensionField<F>>(
     circuit: &GeneralCircuit,
     evaluations: &[Vec<Fields<F, E>>],
     transcript: Transcript<F, E>,
 ) -> VirgoProof<F, E> {
+    let layer_subclaims: Vec<Vec<Subclaim<F, E>>> = vec![vec![]; circuit.layers.len()];
     todo!()
 }
 

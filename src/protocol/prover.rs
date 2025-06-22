@@ -82,6 +82,8 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
             Fields::from_u32(0),
         )
         .evaluate(&r);
+
+        // now we should be able to push into the proof structure
     }
 
     todo!()

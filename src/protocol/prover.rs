@@ -68,14 +68,14 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         .unwrap();
 
         // update the evaluation point and the eval
-        r = folding_proof.challenges;
+        r = folding_proof.challenges.clone();
         m = MultilinearPoly::new_extend_to_power_of_two(
             evaluations[i + 1].clone(),
             Fields::from_u32(0),
         )
         .evaluate(&r);
 
-        proof.add_folding_proof(folding_proof, m.clone());
+        proof.add_folding_proof(folding_proof, m);
     }
 
     todo!()

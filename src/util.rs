@@ -1,13 +1,13 @@
 use std::iter::once;
 
-use p3_field::{ExtensionField, Field};
+use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{
-    Fields, MultilinearExtension,
     mle::MultilinearPoly,
     utils::{generate_eq, product_poly},
-    vpoly::VPoly,
+    Fields, MultilinearExtension,
 };
-use sum_check::interface::SumCheckInterface;
+use sum_check::{interface::SumCheckInterface, primitives::SumCheckProof, SumCheck};
+use transcript::Transcript;
 
 /// Type alias for layer id
 pub type LayerId = usize;
@@ -239,26 +239,18 @@ pub(crate) fn build_agi<F: Field, E: ExtensionField<F>>(
     res
 }
 
-#[allow(dead_code)]
-pub fn n_to_1_folding<F, E, S>(
-    transcript: &mut S::Transcript,
+pub fn n_to_1_folding<F: Field + PrimeField32, E: ExtensionField<F>>(
+    transcript: &mut Transcript<F, E>,
     alphas: &[Fields<F, E>],
     subclaims: &[Subclaim<F, E>],
     vi: &[Fields<F, E>],
-) -> Result<S::Proof, anyhow::Error>
-where
-    F: Field,
-    E: ExtensionField<F>,
-    S: SumCheckInterface<F, E, Polynomial = VPoly<F, E>>,
-{
+) -> Result<SumCheckProof<F, E>, anyhow::Error> {
     let agi = build_agi(alphas, subclaims, vi.len());
-    let agi_extension =
-        MultilinearPoly::new_extend_to_power_of_two(agi, Fields::Extension(E::zero()));
-    let vi_poly =
-        MultilinearPoly::new_extend_to_power_of_two(vi.to_vec(), Fields::Extension(E::zero()));
+    let agi_extension = MultilinearPoly::new_extend_to_power_of_two(agi, Fields::from_u32(0));
+    let vi_poly = MultilinearPoly::new_extend_to_power_of_two(vi.to_vec(), Fields::from_u32(0));
     let mut poly = product_poly::<F, E>(vec![vi_poly, agi_extension]);
     let claimed_sum = poly.sum_over_hypercube();
-    S::prove_partial(claimed_sum, &mut poly, transcript)
+    SumCheck::prove_partial(claimed_sum, &mut poly, transcript)
 }
 
 /// Returns the index of alement if it exists.
@@ -309,12 +301,12 @@ pub(crate) fn subclaims_to_hints<F: Field, E: ExtensionField<F>>(
 mod tests {
     use std::vec;
 
-    use p3_field::{AbstractField, extension::BinomialExtensionField};
+    use p3_field::{extension::BinomialExtensionField, AbstractField};
     use p3_mersenne_31::Mersenne31;
     use poly::{
-        Fields, MultilinearExtension, mle::MultilinearPoly, utils::product_poly, vpoly::VPoly,
+        mle::MultilinearPoly, utils::product_poly, vpoly::VPoly, Fields, MultilinearExtension,
     };
-    use sum_check::{SumCheck, interface::SumCheckInterface};
+    use sum_check::{interface::SumCheckInterface, SumCheck};
     use transcript::Transcript;
 
     type F = Mersenne31;
@@ -323,7 +315,7 @@ mod tests {
 
     use crate::{
         circuit::test::circuit_1,
-        util::{Subclaim, build_agi, n_to_1_folding, n_vars_from_len, subclaims_to_hints},
+        util::{build_agi, n_to_1_folding, n_vars_from_len, subclaims_to_hints, Subclaim},
     };
 
     #[test]

@@ -42,7 +42,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         let subclaims = layer_proving_info.eval_subsets(&layer_sumcheck_proof.challenges);
         let hints = subclaims_to_hints(&subclaims);
 
-        // send hints to proof
+        // append layer proof
         // TODO: fix transcript to simplify this step
         transcript.observe_ext_element(
             &hints

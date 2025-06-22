@@ -2,7 +2,7 @@ use p3_field::{ExtensionField, Field, PackedValue, PrimeField32};
 use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
 use transcript::Transcript;
 
-use crate::circuit::GeneralCircuit;
+use crate::{circuit::GeneralCircuit, protocol::sumcheck::prove_sumcheck_layer};
 
 use super::VirgoProof;
 use crate::util::Subclaim;
@@ -12,6 +12,8 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     evaluations: &[Vec<Fields<F, E>>],
     transcript: &mut Transcript<F, E>,
 ) -> VirgoProof<F, E> {
+    // TODO: this might be just enough for collection of subclaims for the input layer
+    //  need to verify this
     let layer_subclaims: Vec<Vec<Subclaim<F, E>>> = vec![vec![]; circuit.layers.len()];
 
     // commit the output mle to the transcript
@@ -22,13 +24,18 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     // sample challenges for the output
     let r = extension_to_fields(transcript.sample_n_challenges(output_mle.num_vars()));
 
-    // what to do after sampling?
-    // we want to get the claim via evaluation
-    // what does the prover really care about in a subclaim?
-    // only the challenges I believe i.e r
-    // it needs the eval tho to generate the sumcheck claimed sum
-    // even tho that feels quite useless
+    // get layer evaluation
     let m = output_mle.evaluate(r.as_slice());
+
+    // what next?
+    // need to prove the output layer
+    for i in 0..circuit.layers.len() {
+        let layer_proving_info = circuit
+            .generate_layer_proving_info(i)
+            .extract_subsets(evaluations);
+
+        let layer_sumcheck_proof = prove_sumcheck_layer(m, &r, &layer_proving_info, transcript);
+    }
 
     todo!()
 }

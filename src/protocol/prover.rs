@@ -28,8 +28,16 @@ fn deposit_into_subset_info<T>(subset_info: &mut [Vec<T>], data: Vec<T>) {
 
 #[cfg(test)]
 mod test {
+    use super::deposit_into_subset_info;
+
     #[test]
     fn test_deposit_subset_info() {
-        //let subset_info
+        let mut subset_info = vec![vec![]; 3];
+
+        deposit_into_subset_info(&mut subset_info, vec![1, 2, 3, 4]);
+        assert_eq!(subset_info, vec![vec![1, 2], vec![3], vec![4]]);
+
+        deposit_into_subset_info(&mut subset_info[1..], vec![5, 6, 7]);
+        assert_eq!(subset_info, vec![vec![1, 2], vec![3, 5, 6], vec![4, 7]]);
     }
 }

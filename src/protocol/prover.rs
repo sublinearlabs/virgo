@@ -20,7 +20,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     output_mle.commit_to_transcript(transcript);
 
     // sample challenges for the output
-    let r = transcript.sample_n_challenges(output_mle.num_vars());
+    let r = extension_to_fields(transcript.sample_n_challenges(output_mle.num_vars()));
 
     // what to do after sampling?
     // we want to get the claim via evaluation
@@ -43,6 +43,11 @@ fn deposit_into_subset_info<T>(subset_info: &mut [Vec<T>], data: Vec<T>) {
     for (entry, data) in subset_info.iter_mut().zip(data_iter) {
         entry.push(data);
     }
+}
+
+// TODO: make the need for this reduandant
+fn extension_to_fields<F: Field, E: ExtensionField<F>>(vals: Vec<E>) -> Vec<Fields<F, E>> {
+    vals.into_iter().map(|v| Fields::Extension(v)).collect()
 }
 
 #[cfg(test)]

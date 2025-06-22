@@ -1,9 +1,11 @@
-use p3_field::{ExtensionField, Field, PackedValue, PrimeField32};
+use p3_field::{ExtensionField, Field, PrimeField32};
 use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
 use transcript::Transcript;
 
 use crate::{
-    circuit::GeneralCircuit, protocol::sumcheck::prove_sumcheck_layer, util::subclaims_to_hints,
+    circuit::GeneralCircuit,
+    protocol::sumcheck::prove_sumcheck_layer,
+    util::{n_to_1_folding, subclaims_to_hints},
 };
 
 use super::VirgoProof;
@@ -16,7 +18,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
 ) -> VirgoProof<F, E> {
     // TODO: this might be just enough for collection of subclaims for the input layer
     //  need to verify this
-    let layer_subclaims: Vec<Vec<Subclaim<F, E>>> = vec![vec![]; circuit.layers.len()];
+    let mut layer_subclaims: Vec<Vec<Subclaim<F, E>>> = vec![vec![]; circuit.layers.len()];
 
     // commit the output mle to the transcript
     let output_mle =
@@ -45,6 +47,26 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
 
         let subclaims = layer_proving_info.eval_subsets(&layer_sumcheck_proof.challenges);
         let hints = subclaims_to_hints(&subclaims);
+
+        // TODO: push hints to the transcript
+
+        // next we need to deposit subclaims
+        deposit_into_subset_info(&mut layer_subclaims, subclaims);
+
+        // in preparation for the next round we need to perform n-to-1 folding for the next round
+        // to do this we need to get the alphas
+        // this is based on the nnumber of layer subclaims I believe
+        // what is the target vi??
+        // this will be from the evaluations
+
+        // sample alphas
+        let alphas = extension_to_fields(transcript.sample_n_challenges(layer_subclaims[i].len()));
+        let folding_proof = n_to_1_folding(
+            transcript,
+            &alphas,
+            &layer_subclaims[i],
+            &evaluations[i + 1],
+        );
     }
 
     todo!()

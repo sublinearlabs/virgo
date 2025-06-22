@@ -1,5 +1,5 @@
-use p3_field::{ExtensionField, Field};
-use poly::Fields;
+use p3_field::{ExtensionField, Field, PrimeField32};
+use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
 use transcript::Transcript;
 
 use crate::circuit::GeneralCircuit;
@@ -7,12 +7,18 @@ use crate::circuit::GeneralCircuit;
 use super::VirgoProof;
 use crate::util::Subclaim;
 
-pub fn prove<F: Field, E: ExtensionField<F>>(
+pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     circuit: &GeneralCircuit,
     evaluations: &[Vec<Fields<F, E>>],
-    transcript: Transcript<F, E>,
+    transcript: &mut Transcript<F, E>,
 ) -> VirgoProof<F, E> {
     let layer_subclaims: Vec<Vec<Subclaim<F, E>>> = vec![vec![]; circuit.layers.len()];
+
+    // commit the output mle to the transcript
+    let output_mle =
+        MultilinearPoly::new_extend_to_power_of_two(evaluations[0].clone(), Fields::from_u32(0));
+    output_mle.commit_to_transcript(transcript);
+
     todo!()
 }
 

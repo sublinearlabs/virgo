@@ -1,4 +1,4 @@
-use p3_field::{ExtensionField, Field, PrimeField32};
+use p3_field::{ExtensionField, Field, PackedValue, PrimeField32};
 use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
 use transcript::Transcript;
 
@@ -18,6 +18,17 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     let output_mle =
         MultilinearPoly::new_extend_to_power_of_two(evaluations[0].clone(), Fields::from_u32(0));
     output_mle.commit_to_transcript(transcript);
+
+    // sample challenges for the output
+    let r = transcript.sample_n_challenges(output_mle.num_vars());
+
+    // what to do after sampling?
+    // we want to get the claim via evaluation
+    // what does the prover really care about in a subclaim?
+    // only the challenges I believe i.e r
+    // it needs the eval tho to generate the sumcheck claimed sum
+    // even tho that feels quite useless
+    let m = output_mle.evaluate(r.as_slice());
 
     todo!()
 }

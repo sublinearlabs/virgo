@@ -1,5 +1,5 @@
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -17,6 +17,9 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     evaluations: &[Vec<Fields<F, E>>],
     transcript: &mut Transcript<F, E>,
 ) -> VirgoProof<F, E> {
+    // initialize empty proof
+    let mut proof = VirgoProof::<F, E>::default();
+
     // TODO: this might be just enough for collection of subclaims for the input layer
     //  need to verify this
     let mut layer_subclaims: Vec<Vec<Subclaim<F, E>>> = vec![vec![]; circuit.layers.len()];
@@ -32,33 +35,21 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     // get layer evaluation
     let mut m = output_mle.evaluate(r.as_slice());
 
-    // what next?
-    // need to prove the output layer
     for i in 0..circuit.layers.len() {
         let layer_proving_info = circuit
             .generate_layer_proving_info(i)
             .extract_subsets(evaluations);
 
+        // TODO: document subsection
         let layer_sumcheck_proof = prove_sumcheck_layer(m, &r, &layer_proving_info, transcript);
-
-        // what do I do next after performing the sumcheck proof
-        // now I have access to a series of challenges
-        // these challenges should allow me generate the hints
-        // these hints will need to be added to the transcript
-
         let subclaims = layer_proving_info.eval_subsets(&layer_sumcheck_proof.challenges);
         let hints = subclaims_to_hints(&subclaims);
 
         // TODO: push hints to the transcript
+        proof.add_layer_proof(layer_sumcheck_proof, hints);
 
         // next we need to deposit subclaims
         deposit_into_subset_info(&mut layer_subclaims, subclaims);
-
-        // in preparation for the next round we need to perform n-to-1 folding for the next round
-        // to do this we need to get the alphas
-        // this is based on the nnumber of layer subclaims I believe
-        // what is the target vi??
-        // this will be from the evaluations
 
         // sample alphas
         let alphas = extension_to_fields(transcript.sample_n_challenges(layer_subclaims[i].len()));
@@ -70,12 +61,6 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         )
         .unwrap();
 
-        // after generating the folding proof what is next??
-        // we have the challenges from the folding proof
-        // this is the point we are supposed to evaluate V_i at
-        // hence the last stem must be to set r and m to this new values
-        // once that is done we push to the submcheck proof
-
         r = folding_proof.challenges;
         m = MultilinearPoly::new_extend_to_power_of_two(
             evaluations[i + 1].clone(),
@@ -83,7 +68,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         )
         .evaluate(&r);
 
-        // now we should be able to push into the proof structure
+        proof.add_folding_proof(folding_proof, m.clone());
     }
 
     todo!()

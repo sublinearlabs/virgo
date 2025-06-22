@@ -21,8 +21,6 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     let mut proof = VirgoProof::<F, E>::default();
     let mut layer_subclaims: Vec<Vec<Subclaim<F, E>>> = vec![vec![]; circuit.layers.len()];
 
-    // TODO: do we need to commit the circuit to the transcript?
-
     // commit output to the transcript
     let output_mle =
         MultilinearPoly::new_extend_to_power_of_two(evaluations[0].clone(), Fields::from_u32(0));

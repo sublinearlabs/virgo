@@ -12,7 +12,7 @@ use crate::{
 use super::VirgoProof;
 use crate::util::Subclaim;
 
-/// Prove the correct execution of a `GeneralCircuit`
+/// Prove the correct evaluation of a `GeneralCircuit`
 pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
     circuit: &GeneralCircuit,
     evaluations: &[Vec<Fields<F, E>>],

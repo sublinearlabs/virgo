@@ -13,3 +13,23 @@ pub fn prove<F: Field, E: ExtensionField<F>>(
 ) -> VirgoProof<F, E> {
     todo!()
 }
+
+// TODO: add documentation
+fn deposit_into_subset_info<T>(subset_info: &mut [Vec<T>], data: Vec<T>) {
+    debug_assert_eq!(subset_info.len() + 1, data.len());
+
+    let mut data_iter = data.into_iter();
+    subset_info[0].push(data_iter.next().unwrap());
+
+    for (entry, data) in subset_info.iter_mut().zip(data_iter) {
+        entry.push(data);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_deposit_subset_info() {
+        //let subset_info
+    }
+}

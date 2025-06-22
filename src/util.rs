@@ -387,8 +387,7 @@ mod tests {
 
         let mut prover_transcript = Transcript::<F, E>::init();
 
-        let proof =
-            n_to_1_folding::<F, E, S>(&mut prover_transcript, &alphas, &subclaims, &main_poly_eval);
+        let proof = n_to_1_folding(&mut prover_transcript, &alphas, &subclaims, &main_poly_eval);
 
         let mut verifier_transcript = Transcript::<F, E>::init();
 

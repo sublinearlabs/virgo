@@ -26,7 +26,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         MultilinearPoly::new_extend_to_power_of_two(evaluations[0].clone(), Fields::from_u32(0));
     output_mle.commit_to_transcript(transcript);
 
-    // generate layer claim via challenge and evaluation
+    // generate layer claim
     let mut eval_point = extension_to_fields(transcript.sample_n_challenges(output_mle.num_vars()));
     let mut eval = output_mle.evaluate(eval_point.as_slice());
 

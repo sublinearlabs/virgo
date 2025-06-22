@@ -56,7 +56,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         proof.add_layer_proof(layer_sumcheck_proof, hints);
 
         // distribute the subclaim to their appropriate layers
-        deposit_subclaims(&mut layer_subclaims, subclaims);
+        deposit_subclaims(&mut layer_subclaims[i..], subclaims);
 
         // prepare the next layer
         // we do this by folding all subclaims for the next layer into a single claim
@@ -104,7 +104,14 @@ fn extension_to_fields<F: Field, E: ExtensionField<F>>(vals: Vec<E>) -> Vec<Fiel
 
 #[cfg(test)]
 mod test {
-    use super::deposit_subclaims;
+    use super::{deposit_subclaims, prove};
+    use crate::circuit::test::circuit_1;
+    use p3_field::extension::BinomialExtensionField;
+    use poly::Fields;
+
+    use p3_mersenne_31::Mersenne31 as F;
+    use transcript::Transcript;
+    type E = BinomialExtensionField<F, 3>;
 
     #[test]
     fn test_deposit_subclaims_container() {
@@ -118,5 +125,14 @@ mod test {
             subclaims_container,
             vec![vec![1, 2], vec![3, 5, 6], vec![4, 7]]
         );
+    }
+
+    #[test]
+    fn test_general_circuit_proving() {
+        let circuit = circuit_1();
+        let evals = circuit.eval(&Fields::<F, E>::from_u32_vec(vec![1, 2, 3, 4, 5, 6]));
+
+        let mut prover_transcript = Transcript::init();
+        let _proof = prove(&circuit, &evals, &mut prover_transcript);
     }
 }

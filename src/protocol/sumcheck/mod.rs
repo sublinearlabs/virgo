@@ -46,7 +46,10 @@ fn merge_sumcheck_proofs<F: Field, E: ExtensionField<F>>(
 
 #[cfg(test)]
 mod test {
-    use crate::{circuit::test::circuit_1, protocol::sumcheck::prove_sumcheck_layer};
+    use crate::{
+        circuit::test::circuit_1, protocol::sumcheck::prove_sumcheck_layer,
+        util::subclaims_to_hints,
+    };
     use p3_field::{AbstractField, ExtensionField, Field, extension::BinomialExtensionField};
     use p3_mersenne_31::Mersenne31 as F;
     use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
@@ -99,7 +102,8 @@ mod test {
             );
 
             // generate prover hints for oracle check
-            let hints = layer_proving_info_with_subset.eval_subsets(&verification_result.1);
+            let subclaims = layer_proving_info_with_subset.eval_subsets(&verification_result.1);
+            let hints = subclaims_to_hints(&subclaims);
 
             // perform oracle check
             let layer_eval = layer_proving_info.eval(output_point, &hints, &verification_result.1);

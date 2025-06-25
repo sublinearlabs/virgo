@@ -204,10 +204,9 @@ impl<F: Field, E: ExtensionField<F>> LayerProvingInfoWithSubset<F, E> {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Subclaim<F: Field, E: ExtensionField<F>> {
-    r: Vec<Fields<F, E>>,
-    #[allow(dead_code)]
-    eval: Fields<F, E>,
-    instruction: Vec<usize>,
+    pub(crate) r: Vec<Fields<F, E>>,
+    pub(crate) eval: Fields<F, E>,
+    pub(crate) instruction: Vec<usize>,
 }
 
 impl<F: Field, E: ExtensionField<F>> Subclaim<F, E> {

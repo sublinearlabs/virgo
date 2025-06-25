@@ -79,6 +79,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         proof.add_folding_proof(folding_proof, eval);
     }
 
+    proof.layer_subclaims = layer_subclaims;
     proof
 }
 
@@ -104,7 +105,7 @@ fn extension_to_fields<F: Field, E: ExtensionField<F>>(vals: Vec<E>) -> Vec<Fiel
 #[cfg(test)]
 mod test {
     use super::{deposit_subclaims, prove};
-    use crate::circuit::test::circuit_1;
+    use crate::{circuit::test::circuit_1, protocol::verifier::VirgoVerifier};
     use p3_field::extension::BinomialExtensionField;
     use poly::Fields;
 
@@ -129,9 +130,20 @@ mod test {
     #[test]
     fn test_general_circuit_proving() {
         let circuit = circuit_1();
-        let evals = circuit.eval(&Fields::<F, E>::from_u32_vec(vec![1, 2, 3, 4, 5, 6]));
+        let input = Fields::<F, E>::from_u32_vec(vec![1, 2, 3, 4, 5, 6]);
+        let evals = circuit.eval(&input);
 
         let mut prover_transcript = Transcript::init();
-        let _proof = prove(&circuit, &evals, &mut prover_transcript);
+        let proof = prove(&circuit, &evals, &mut prover_transcript);
+        let verifier = VirgoVerifier::<F, E>::new();
+        let mut verifier_transcript = Transcript::init();
+        let verify = verifier.verify_virgo_proof(
+            &circuit,
+            &proof,
+            &input,
+            &evals[0],
+            &mut verifier_transcript,
+        );
+        assert!(verify.expect("Verification failed"));
     }
 }

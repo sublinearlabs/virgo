@@ -1,5 +1,5 @@
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
+use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 

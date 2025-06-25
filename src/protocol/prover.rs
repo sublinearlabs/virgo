@@ -1,5 +1,5 @@
 use p3_field::{ExtensionField, Field, PrimeField32};
-use poly::{Fields, MultilinearExtension, mle::MultilinearPoly};
+use poly::{mle::MultilinearPoly, Fields, MultilinearExtension};
 use sum_check::primitives::SumCheckProof;
 use transcript::Transcript;
 
@@ -43,13 +43,7 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         let hints = subclaims_to_hints(&subclaims);
 
         // append layer proof
-        // TODO: fix transcript to simplify this step
-        transcript.observe_ext_element(
-            &hints
-                .iter()
-                .map(|h| h.to_extension_field())
-                .collect::<Vec<_>>(),
-        );
+        transcript.observe(hints.as_slice());
         proof.add_layer_proof(layer_sumcheck_proof, hints);
 
         // distribute the subclaim to their appropriate layers

@@ -98,7 +98,7 @@ fn extension_to_fields<F: Field, E: ExtensionField<F>>(vals: Vec<E>) -> Vec<Fiel
 #[cfg(test)]
 mod test {
     use super::{deposit_subclaims, prove};
-    use crate::{circuit::test::circuit_1, protocol::verifier::VirgoVerifier};
+    use crate::{circuit::test::circuit_1, protocol::verifier::verify};
     use p3_field::extension::BinomialExtensionField;
     use poly::Fields;
 
@@ -128,9 +128,8 @@ mod test {
 
         let mut prover_transcript = Transcript::init();
         let proof = prove(&circuit, &evals, &mut prover_transcript);
-        let verifier = VirgoVerifier::<F, E>::new();
         let mut verifier_transcript = Transcript::init();
-        let verify = verifier.verify_virgo_proof(
+        let verify = verify(
             &circuit,
             &proof,
             &input,

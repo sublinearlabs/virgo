@@ -4,7 +4,10 @@ use std::marker::PhantomData;
 use sum_check::{SumCheck, interface::SumCheckInterface};
 use transcript::Transcript;
 
-use crate::{circuit::GeneralCircuit, util::build_agi};
+use crate::{
+    circuit::GeneralCircuit,
+    util::{Subclaim, build_agi},
+};
 
 use super::VirgoProof;
 
@@ -48,67 +51,8 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
         let mut claimed_sum = output_poly.evaluate(&r);
 
-        let (layer_sumcheck_proof, layer_sumcheck_hints) = &virgo_proof.layer_sumchecks[0];
-
-        assert_eq!(claimed_sum, layer_sumcheck_proof.claimed_sum);
-
-        let (sumcheck_claimed_sum, b_c_points) =
-            SumCheck::<F, E, VPoly<F, E>>::verify_partial(layer_sumcheck_proof, transcript);
-
-        transcript.observe_ext_element(
-            &layer_sumcheck_hints
-                .iter()
-                .map(|val| val.to_extension_field())
-                .collect::<Vec<E>>(),
-        );
-
-        let layer_proving_info = circuit.generate_layer_proving_info(0);
-
-        let mut expected_claimed_sum =
-            layer_proving_info.eval(&r, layer_sumcheck_hints, &b_c_points);
-
-        assert_eq!(
-            sumcheck_claimed_sum,
-            expected_claimed_sum.to_extension_field()
-        );
-
-        let mut alphas = transcript
-            .sample_n_challenges(virgo_proof.layer_subclaims[0].len())
-            .iter()
-            .map(|val| Fields::Extension(*val))
-            .collect::<Vec<Fields<F, E>>>();
-
-        let (n_to_1_sumcheck_proof, n_to_1_hint) = &virgo_proof.folding_sumchecks[0];
-
-        let agi = build_agi(
-            &alphas,
-            &virgo_proof.layer_subclaims[0],
-            circuit.layers[0].gates.len(),
-        );
-
-        let agi_poly =
-            MultilinearPoly::new_extend_to_power_of_two(agi, Fields::Extension(E::zero()));
-
-        let (n_to_1_claimed_sum, n_to_1_challenges) =
-            SumCheck::<F, E, VPoly<F, E>>::verify_partial(n_to_1_sumcheck_proof, transcript);
-
-        let agi_x = agi_poly.evaluate(&n_to_1_challenges);
-
-        transcript.observe_ext_element(&[n_to_1_hint.to_extension_field()]);
-
-        expected_claimed_sum = agi_x * *n_to_1_hint;
-
-        r = n_to_1_challenges;
-
-        assert_eq!(
-            n_to_1_claimed_sum,
-            expected_claimed_sum.to_extension_field()
-        );
-
-        claimed_sum = *n_to_1_hint;
-
         // For each layer
-        for i in 1..circuit.layers.len() - 1 {
+        for i in 0..circuit.layers.len() - 1 {
             let (layer_sumcheck_proof, layer_sumcheck_hints) = &virgo_proof.layer_sumchecks[i];
 
             assert_eq!(claimed_sum, layer_sumcheck_proof.claimed_sum);
@@ -118,8 +62,10 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
             let layer_proving_info = circuit.generate_layer_proving_info(i);
 
-            expected_claimed_sum = layer_proving_info.eval(&r, layer_sumcheck_hints, &b_c_points);
+            let expected_claimed_sum =
+                layer_proving_info.eval(&r, layer_sumcheck_hints, &b_c_points);
 
+            // Oracle Check
             assert_eq!(
                 sumcheck_claimed_sum,
                 expected_claimed_sum.to_extension_field()
@@ -132,7 +78,7 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
                     .collect::<Vec<E>>(),
             );
 
-            alphas = transcript
+            let alphas = transcript
                 .sample_n_challenges(virgo_proof.layer_subclaims[i].len())
                 .iter()
                 .map(|val| Fields::Extension(*val))
@@ -140,27 +86,22 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
             let (n_to_1_sumcheck_proof, n_to_1_hint) = &virgo_proof.folding_sumchecks[i];
 
-            let agi = build_agi(
-                &alphas,
-                &virgo_proof.layer_subclaims[i],
-                circuit.layers[i + 1].gates.len(),
-            );
-
-            let agi_poly =
-                MultilinearPoly::new_extend_to_power_of_two(agi, Fields::Extension(E::zero()));
-
             let (n_to_1_claimed_sum, n_to_1_challenges) =
                 SumCheck::<F, E, VPoly<F, E>>::verify_partial(n_to_1_sumcheck_proof, transcript);
 
-            let agi_x = agi_poly.evaluate(&n_to_1_challenges);
+            let agi_x = eval_agi_given_input(
+                &alphas,
+                &virgo_proof.layer_subclaims[i],
+                circuit.layers[i + 1].gates.len(),
+                &n_to_1_challenges,
+            );
 
             transcript.observe_ext_element(&[n_to_1_hint.to_extension_field()]);
 
-            expected_claimed_sum = agi_x * *n_to_1_hint;
-
+            // N to 1 Oracle Check
             assert_eq!(
                 n_to_1_claimed_sum,
-                expected_claimed_sum.to_extension_field()
+                (agi_x * *n_to_1_hint).to_extension_field()
             );
 
             r = n_to_1_challenges;
@@ -180,8 +121,9 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
         let layer_proving_info = circuit.generate_layer_proving_info(input_layer_id);
 
-        expected_claimed_sum = layer_proving_info.eval(&r, layer_sumcheck_hints, &b_c_points);
+        let expected_claimed_sum = layer_proving_info.eval(&r, layer_sumcheck_hints, &b_c_points);
 
+        // Oracle Check
         assert_eq!(
             sumcheck_claimed_sum,
             expected_claimed_sum.to_extension_field()
@@ -194,7 +136,7 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
                 .collect::<Vec<E>>(),
         );
 
-        alphas = transcript
+        let alphas = transcript
             .sample_n_challenges(virgo_proof.layer_subclaims[input_layer_id].len())
             .iter()
             .map(|val| Fields::Extension(*val))
@@ -202,19 +144,15 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
         let (n_to_1_sumcheck_proof, n_to_1_hint) = &virgo_proof.folding_sumchecks[input_layer_id];
 
-        let agi = build_agi(
-            &alphas,
-            &virgo_proof.layer_subclaims[input_layer_id],
-            input.len(),
-        );
-
-        let agi_poly =
-            MultilinearPoly::new_extend_to_power_of_two(agi, Fields::Extension(E::zero()));
-
         let (n_to_1_claimed_sum, n_to_1_challenges) =
             SumCheck::<F, E, VPoly<F, E>>::verify_partial(n_to_1_sumcheck_proof, transcript);
 
-        let agi_x = agi_poly.evaluate(&n_to_1_challenges);
+        let agi_x = eval_agi_given_input(
+            &alphas,
+            &virgo_proof.layer_subclaims[input_layer_id],
+            input.len(),
+            &n_to_1_challenges,
+        );
 
         let vi_x = MultilinearPoly::new_extend_to_power_of_two(
             input.to_vec(),
@@ -224,13 +162,22 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
         transcript.observe_ext_element(&[n_to_1_hint.to_extension_field()]);
 
-        expected_claimed_sum = agi_x * vi_x;
-
-        assert_eq!(
-            n_to_1_claimed_sum,
-            expected_claimed_sum.to_extension_field()
-        );
+        // N to 1 Oracle Check
+        assert_eq!(n_to_1_claimed_sum, (agi_x * vi_x).to_extension_field());
 
         Ok(true)
     }
+}
+
+pub(crate) fn eval_agi_given_input<F: Field, E: ExtensionField<F>>(
+    alphas: &[Fields<F, E>],
+    subclaims: &[Subclaim<F, E>],
+    table_length: usize,
+    challenges: &[Fields<F, E>],
+) -> Fields<F, E> {
+    let agi = build_agi(alphas, subclaims, table_length);
+
+    let agi_poly = MultilinearPoly::new_extend_to_power_of_two(agi, Fields::Extension(E::zero()));
+
+    agi_poly.evaluate(challenges)
 }

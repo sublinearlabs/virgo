@@ -33,15 +33,24 @@ dependencies = [
 
 [[package]]
 name = "crunchy"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43da5946c66ffcc7745f48db692ffbb10a83bfe0afd96235c5c2a4fb23994929"
+checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
+
+[[package]]
+name = "fields"
+version = "0.1.0"
+source = "git+https://github.com/sublinearlabs/sl-core.git#7216cdddae66f163c54834926367a84fdec0c51f"
+dependencies = [
+ "p3-field",
+ "p3-mersenne-31",
+]
 
 [[package]]
 name = "gcd"
@@ -83,22 +92,6 @@ name = "libc"
 version = "0.2.174"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
-
-[[package]]
-name = "libra"
-version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/libra.git#0a23072dee61bb0001884db1f100a8824b075a42"
-dependencies = [
- "circuits",
- "p3-challenger",
- "p3-field",
- "p3-goldilocks",
- "p3-keccak",
- "p3-mersenne-31",
- "poly",
- "sum_check",
- "transcript",
-]
 
 [[package]]
 name = "num-bigint"
@@ -316,8 +309,9 @@ checksum = "3b3cff922bd51709b605d9ead9aa71031d81447142d828eb4a6eba76fe619f9b"
 [[package]]
 name = "poly"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#fc79d9c6b30791b97868e48f8934bfed68e4b011"
+source = "git+https://github.com/sublinearlabs/sl-core.git#7216cdddae66f163c54834926367a84fdec0c51f"
 dependencies = [
+ "fields",
  "p3-challenger",
  "p3-field",
  "p3-goldilocks",
@@ -411,7 +405,7 @@ checksum = "fe895eb47f22e2ddd4dabc02bce419d2e643c8e3b585c78158b349195bc24d82"
 [[package]]
 name = "sum_check"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#fc79d9c6b30791b97868e48f8934bfed68e4b011"
+source = "git+https://github.com/sublinearlabs/sl-core.git#7216cdddae66f163c54834926367a84fdec0c51f"
 dependencies = [
  "anyhow",
  "p3-challenger",
@@ -424,9 +418,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.103"
+version = "2.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4307e30089d6fd6aff212f2da3a1f9e32f3223b1f010fb09b7c95f90f3ca1e8"
+checksum = "17b6f705963418cdb9927482fa304bc562ece2fdd4f616084c50b7023b435a40"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -476,8 +470,9 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.1.0"
-source = "git+https://github.com/sublinearlabs/sl-core.git#fc79d9c6b30791b97868e48f8934bfed68e4b011"
+source = "git+https://github.com/sublinearlabs/sl-core.git#7216cdddae66f163c54834926367a84fdec0c51f"
 dependencies = [
+ "fields",
  "p3-challenger",
  "p3-field",
  "p3-keccak",

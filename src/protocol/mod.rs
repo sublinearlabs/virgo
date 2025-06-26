@@ -1,5 +1,6 @@
 pub mod prover;
 pub mod sumcheck;
+pub mod verifier;
 
 use p3_field::{ExtensionField, Field};
 use poly::Fields;
@@ -10,8 +11,8 @@ type FoldingSumcheck<F, E> = (SumCheckProof<F, E>, Fields<F, E>);
 
 #[derive(Default)]
 pub struct VirgoProof<F: Field, E: ExtensionField<F>> {
-    pub layer_sumchecks: Vec<LayerSumcheck<F, E>>,
-    pub folding_sumchecks: Vec<FoldingSumcheck<F, E>>,
+    pub(crate) layer_sumchecks: Vec<LayerSumcheck<F, E>>,
+    pub(crate) folding_sumchecks: Vec<FoldingSumcheck<F, E>>,
 }
 
 impl<F: Field, E: ExtensionField<F>> VirgoProof<F, E> {

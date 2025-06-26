@@ -6,8 +6,6 @@ use p3_field::{ExtensionField, Field};
 use poly::Fields;
 use sum_check::primitives::SumCheckProof;
 
-use crate::util::Subclaim;
-
 type LayerSumcheck<F, E> = (SumCheckProof<F, E>, Vec<Fields<F, E>>);
 type FoldingSumcheck<F, E> = (SumCheckProof<F, E>, Fields<F, E>);
 
@@ -15,7 +13,6 @@ type FoldingSumcheck<F, E> = (SumCheckProof<F, E>, Fields<F, E>);
 pub struct VirgoProof<F: Field, E: ExtensionField<F>> {
     pub(crate) layer_sumchecks: Vec<LayerSumcheck<F, E>>,
     pub(crate) folding_sumchecks: Vec<FoldingSumcheck<F, E>>,
-    pub(crate) layer_subclaims: Vec<Vec<Subclaim<F, E>>>,
 }
 
 impl<F: Field, E: ExtensionField<F>> VirgoProof<F, E> {

@@ -6,6 +6,7 @@ use transcript::Transcript;
 
 use crate::{
     circuit::GeneralCircuit,
+    protocol::prover::deposit_subclaims,
     util::{Subclaim, build_agi},
 };
 
@@ -51,6 +52,8 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
         let mut claimed_sum = output_poly.evaluate(&r);
 
+        let mut subclaims_container = vec![vec![]; circuit.layers.len()];
+
         // For each layer
         for i in 0..circuit.layers.len() - 1 {
             let (layer_sumcheck_proof, layer_sumcheck_hints) = &virgo_proof.layer_sumchecks[i];
@@ -73,8 +76,13 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
             transcript.observe(layer_sumcheck_hints);
 
+            let subclaims =
+                layer_proving_info.hints_to_subclaims(layer_sumcheck_hints, &b_c_points);
+
+            deposit_subclaims(&mut subclaims_container[i..], subclaims);
+
             let alphas = transcript
-                .sample_n_challenges(virgo_proof.layer_subclaims[i].len())
+                .sample_n_challenges(subclaims_container[i].len())
                 .into_iter()
                 .map(Fields::Extension)
                 .collect::<Vec<Fields<F, E>>>();
@@ -86,7 +94,7 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
             let agi_x = eval_agi_given_input(
                 &alphas,
-                &virgo_proof.layer_subclaims[i],
+                &subclaims_container[i],
                 circuit.layers[i + 1].gates.len(),
                 &n_to_1_challenges,
             );
@@ -126,8 +134,12 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
         transcript.observe(layer_sumcheck_hints);
 
+        let subclaims = layer_proving_info.hints_to_subclaims(layer_sumcheck_hints, &b_c_points);
+
+        deposit_subclaims(&mut subclaims_container[input_layer_id..], subclaims);
+
         let alphas = transcript
-            .sample_n_challenges(virgo_proof.layer_subclaims[input_layer_id].len())
+            .sample_n_challenges(subclaims_container[input_layer_id].len())
             .into_iter()
             .map(Fields::Extension)
             .collect::<Vec<Fields<F, E>>>();
@@ -139,7 +151,7 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
 
         let agi_x = eval_agi_given_input(
             &alphas,
-            &virgo_proof.layer_subclaims[input_layer_id],
+            &subclaims_container[input_layer_id],
             input.len(),
             &n_to_1_challenges,
         );

@@ -73,13 +73,12 @@ pub fn prove<F: Field + PrimeField32, E: ExtensionField<F>>(
         proof.add_folding_proof(folding_proof, eval);
     }
 
-    proof.layer_subclaims = layer_subclaims;
     proof
 }
 
 /// Distributes a set of subclaim belonging to different layers to their
 /// appropriate layer entry slot.
-fn deposit_subclaims<T>(subclaims_container: &mut [Vec<T>], subclaims: Vec<T>) {
+pub(crate) fn deposit_subclaims<T>(subclaims_container: &mut [Vec<T>], subclaims: Vec<T>) {
     debug_assert_eq!(subclaims_container.len() + 1, subclaims.len());
 
     let mut subclaims_iter = subclaims.into_iter();

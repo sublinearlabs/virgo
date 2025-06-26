@@ -46,7 +46,7 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
         let mut r = transcript
             .sample_n_challenges(output_poly.num_vars())
             .into_iter()
-            .map(|val| Fields::Extension(val))
+            .map(Fields::Extension)
             .collect::<Vec<Fields<F, E>>>();
 
         let mut claimed_sum = output_poly.evaluate(&r);
@@ -71,17 +71,12 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
                 expected_claimed_sum.to_extension_field()
             );
 
-            transcript.observe_ext_element(
-                &layer_sumcheck_hints
-                    .iter()
-                    .map(|val| val.to_extension_field())
-                    .collect::<Vec<E>>(),
-            );
+            transcript.observe(layer_sumcheck_hints);
 
             let alphas = transcript
                 .sample_n_challenges(virgo_proof.layer_subclaims[i].len())
-                .iter()
-                .map(|val| Fields::Extension(*val))
+                .into_iter()
+                .map(Fields::Extension)
                 .collect::<Vec<Fields<F, E>>>();
 
             let (n_to_1_sumcheck_proof, n_to_1_hint) = &virgo_proof.folding_sumchecks[i];
@@ -96,7 +91,7 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
                 &n_to_1_challenges,
             );
 
-            transcript.observe_ext_element(&[n_to_1_hint.to_extension_field()]);
+            transcript.observe(&[*n_to_1_hint]);
 
             // N to 1 Oracle Check
             assert_eq!(
@@ -129,20 +124,15 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
             expected_claimed_sum.to_extension_field()
         );
 
-        transcript.observe_ext_element(
-            &layer_sumcheck_hints
-                .iter()
-                .map(|val| val.to_extension_field())
-                .collect::<Vec<E>>(),
-        );
+        transcript.observe(layer_sumcheck_hints);
 
         let alphas = transcript
             .sample_n_challenges(virgo_proof.layer_subclaims[input_layer_id].len())
-            .iter()
-            .map(|val| Fields::Extension(*val))
+            .into_iter()
+            .map(Fields::Extension)
             .collect::<Vec<Fields<F, E>>>();
 
-        let (n_to_1_sumcheck_proof, n_to_1_hint) = &virgo_proof.folding_sumchecks[input_layer_id];
+        let (n_to_1_sumcheck_proof, _n_to_1_hint) = &virgo_proof.folding_sumchecks[input_layer_id];
 
         let (n_to_1_claimed_sum, n_to_1_challenges) =
             SumCheck::<F, E, VPoly<F, E>>::verify_partial(n_to_1_sumcheck_proof, transcript);
@@ -159,8 +149,6 @@ impl<F: Field + PrimeField32, E: ExtensionField<F>> VirgoVerifier<F, E> {
             Fields::Extension(E::zero()),
         )
         .evaluate(&n_to_1_challenges);
-
-        transcript.observe_ext_element(&[n_to_1_hint.to_extension_field()]);
 
         // N to 1 Oracle Check
         assert_eq!(n_to_1_claimed_sum, (agi_x * vi_x).to_extension_field());

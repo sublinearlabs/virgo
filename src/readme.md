@@ -1,0 +1,3 @@
+# Virgo++: Interactive Proofs for General Arithmetic Circuits
+
+This project implements the interactive proof protocol from the paper "Doubly Efficient Interactive Proofs for General Arithmetic Circuits with Linear Prover Time" by Jiaheng Zhang et al. Virgo++ extends the capabilities of the GKR protocol to handle general (arbitrary) arithmetic circuits with a prover time that is linear in the circuit size, making it both efficient and versatile for verifiable computation.

@@ -11,6 +11,8 @@ To use Virgo++ in your Rust project, add it as a dependency in your `Cargo.toml`
 ```toml
 [dependencies]
 virgo = { git = "https://github.com/sublinearlabs/virgo" }
+p3_field = "0.1" # Adjust version as needed
+p3_mersenne_31 = "0.1"
 ```
 
 Below are the steps to import the library, create a circuit, run the prover, and verify the proof. The example computes `(a + b) * (c + d)` for inputs `a=1, b=2, c=3, d=4`.

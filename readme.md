@@ -80,3 +80,9 @@ let is_valid = verify(
 ).expect("Verification failed");
 assert!(is_valid, "Proof verification failed");
 ```
+
+## Contributing
+Contributions are welcome! Please submit pull requests or open issues.
+
+## License
+This project is licensed under the MIT License.
